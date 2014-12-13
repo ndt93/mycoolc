@@ -141,7 +141,7 @@ WHITESPACE      [ \n\f\r\t\v]
 {FALSE} {
     curr_lineno = yylineno;
     cool_yylval.boolean = false;
-    return (BOOL_CONST); 
+    return (BOOL_CONST);
 }
 {FI}        curr_lineno = yylineno; return (FI);
 {IF}        curr_lineno = yylineno; return (IF);
@@ -163,11 +163,11 @@ WHITESPACE      [ \n\f\r\t\v]
     cool_yylval.boolean = true;
     return (BOOL_CONST);
 }
-}           
+}
 
  /*
   *  String constants (C syntax)
-  *  Escape sequence \c is accepted for all characters c. Except for 
+  *  Escape sequence \c is accepted for all characters c. Except for
   *  \n \t \b \f, the result is c.
   *
   */
@@ -181,7 +181,7 @@ WHITESPACE      [ \n\f\r\t\v]
     \" {
         curr_lineno = yylineno;
         *string_buf_ptr = '\0';
-        cool_yylval.symbol = stringtable.add_string(string_buffer); 
+        cool_yylval.symbol = stringtable.add_string(string_buffer);
         BEGIN(INITIAL);
         return (STR_CONST);
     }
@@ -211,23 +211,23 @@ WHITESPACE      [ \n\f\r\t\v]
         return (ERROR);
     }
 
-    \\b { 
-        curr_lineno = yylineno;  
+    \\b {
+        curr_lineno = yylineno;
         *(string_buf_ptr++) = '\b';
         if (++str_const_len >= MAX_STR_CONST) return report_long_str();
     }
-    \\t { 
-        curr_lineno = yylineno;  
+    \\t {
+        curr_lineno = yylineno;
         *(string_buf_ptr++) = '\t';
         if (++str_const_len >= MAX_STR_CONST) return report_long_str();
     }
-    \\n { 
-        curr_lineno = yylineno;  
+    \\n {
+        curr_lineno = yylineno;
         *(string_buf_ptr++) = '\n';
         if (++str_const_len >= MAX_STR_CONST) return report_long_str();
     }
-    \\f { 
-        curr_lineno = yylineno;  
+    \\f {
+        curr_lineno = yylineno;
         *(string_buf_ptr++) = '\f';
         if (++str_const_len >= MAX_STR_CONST) return report_long_str();
     }
@@ -268,12 +268,12 @@ WHITESPACE      [ \n\f\r\t\v]
 [A-Z][a-zA-Z0-9_]* {
     curr_lineno = yylineno;
     cool_yylval.symbol = idtable.add_string(yytext);
-    return (TYPEID); 
+    return (TYPEID);
 }
 [a-z][a-zA-Z0-9_]* {
     curr_lineno = yylineno;
     cool_yylval.symbol = idtable.add_string(yytext);
-    return (OBJECTID); 
+    return (OBJECTID);
 }
 }
 
