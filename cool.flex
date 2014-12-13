@@ -87,14 +87,21 @@ WHITESPACE      [ \n\f\r\t\v]
   int str_const_len;
 
 <INITIAL>"--"       BEGIN(LCOMMENT); curr_lineno = yylineno;
-<LCOMMENT>.*\n      BEGIN(INITIAL); curr_lineno = yylineno;
-<LCOMMENT><<EOF>>   BEGIN(INITIAL); curr_lineno = yylineno; yyterminate();
+<LCOMMENT>{
+    \n          BEGIN(INITIAL); curr_lineno = yylineno;
+    [^\n]*      /* Ignore everything other than new line */
+    <<EOF>>     BEGIN(INITIAL); curr_lineno = yylineno; yyterminate();
+}
 
  /*
   *  Nested comments
   */
 <NCOMMENT>"(*"  nested_comments++; curr_lineno = yylineno;
-<INITIAL>"(*"   BEGIN(NCOMMENT); nested_comments++; curr_lineno = yylineno;
+<INITIAL>"(*" {
+    BEGIN(NCOMMENT);
+    nested_comments = 1;
+    curr_lineno = yylineno;
+}
 <INITIAL>"*)" {
     curr_lineno = yylineno;
     cool_yylval.error_msg = (stringtable.add_string("Unmatched *)"))
@@ -102,9 +109,9 @@ WHITESPACE      [ \n\f\r\t\v]
     return (ERROR);
 }
 <NCOMMENT>{
-[^*)]*    /* Ignore anything not * and ) */
-"*)"      if (--nested_comments == 0) BEGIN(INITIAL); curr_lineno = yylineno;
-[*)]      /* Ignore any * and ) not forming a comment token */
+[^*()]*   /* Ignore anything not * and ) */
+"*)"     if (--nested_comments == 0) BEGIN(INITIAL); curr_lineno = yylineno;
+[*()]      /* Ignore any * and ) not forming a comment token */
 <<EOF>> {
         curr_lineno = yylineno;
         BEGIN(INITIAL);
@@ -119,9 +126,9 @@ WHITESPACE      [ \n\f\r\t\v]
   *  The multiple-character operators.
   */
 <INITIAL>{
-{DARROW}		{ return (DARROW); }
-{ASSIGN}                { return (ASSIGN); }
-\<=                      { return (LE); }
+{DARROW}		{ curr_lineno = yylineno; return (DARROW); }
+{ASSIGN}                { curr_lineno = yylineno; return (ASSIGN); }
+\<=                     { curr_lineno = yylineno; return (LE); }
 }
 
  /*
@@ -184,13 +191,14 @@ WHITESPACE      [ \n\f\r\t\v]
         cool_yylval.error_msg = (stringtable.
                                  add_string("Unterminated string constant"))
                                 ->get_string();
+        BEGIN(INITIAL);
         return (ERROR);
     }
-    \0 {
+    (\\\0|\0) {
         curr_lineno = yylineno;
         cool_yylval.error_msg = (stringtable.
-                                 add_string("String contains null character"))
-                                ->get_string();
+                               add_string("String contains null character"))
+                               ->get_string();
         BEGIN(STR_ERR);
         return (ERROR);
     }
@@ -205,27 +213,27 @@ WHITESPACE      [ \n\f\r\t\v]
 
     \\b { 
         curr_lineno = yylineno;  
-        *string_buf_ptr = '\b';
+        *(string_buf_ptr++) = '\b';
         if (++str_const_len >= MAX_STR_CONST) return report_long_str();
     }
     \\t { 
         curr_lineno = yylineno;  
-        *string_buf_ptr = '\t';
+        *(string_buf_ptr++) = '\t';
         if (++str_const_len >= MAX_STR_CONST) return report_long_str();
     }
     \\n { 
         curr_lineno = yylineno;  
-        *string_buf_ptr = '\n';
+        *(string_buf_ptr++) = '\n';
         if (++str_const_len >= MAX_STR_CONST) return report_long_str();
     }
     \\f { 
         curr_lineno = yylineno;  
-        *string_buf_ptr = '\f';
+        *(string_buf_ptr++) = '\f';
         if (++str_const_len >= MAX_STR_CONST) return report_long_str();
     }
-    \\[.|\n] {
+    \\[^\0] {
         curr_lineno = yylineno;
-        *string_buf_ptr = yytext[1];
+        *(string_buf_ptr++) = yytext[1];
         if (++str_const_len >= MAX_STR_CONST) return report_long_str();
     }
 
@@ -240,8 +248,10 @@ WHITESPACE      [ \n\f\r\t\v]
         }
     }
 }
-<STR_ERR>[^"]*\"    BEGIN(INITIAL);/* Ignore the rest of quoted string */
-<STR_ERR><<EOF>>    BEGIN(INITIAL); yyterminate();
+<STR_ERR>\n     |
+<STR_ERR>[^"\n]*[^\\]\n BEGIN(INITIAL);
+<STR_ERR>[^"\n]*\"      BEGIN(INITIAL);/* Ignore the rest of quoted string */
+<STR_ERR><<EOF>>        BEGIN(INITIAL); yyterminate();
 
     /* Integers constant: non-empty sequence of digits 0 to 9 */
 <INITIAL>{DIGIT}+ {
@@ -268,7 +278,7 @@ WHITESPACE      [ \n\f\r\t\v]
 }
 
     /* Special Syntatic Notations */
-<INITIAL>[+\-*/~<=();,:{}.] curr_lineno = yylineno; return (yytext[0]);
+<INITIAL>[+\-*/~<=();,:{}.@] curr_lineno = yylineno; return (yytext[0]);
 
 <INITIAL>{WHITESPACE} /* Ignore white spaces */
 
