@@ -1,4 +1,4 @@
-A Compiler for COOL programming language
+A compiler for the COOL programming language
 
 COOL is a programming language designed by Alexander Aiken. COOL is an object oriented programming language with strong static typing, automatic memory management, and simple reflection.
 
