@@ -1,8 +1,8 @@
 CGEN= cool-lex.cc
 
-FFLAGS= -d -ocool-lex.cc
+FFLAGS= -d -osrc/cool-lex.cc
 
 FLEX=flex ${FFLAGS}
 
-cool-lex.cc: cool.flex
-	${FLEX} cool.flex
+cool-lex.cc: src/cool.flex
+	${FLEX} src/cool.flex
