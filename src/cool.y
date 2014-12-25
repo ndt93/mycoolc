@@ -140,7 +140,7 @@
     %type <formals> formals
     %type <formal> formal
 
-    %type <expressions> expr_list expr_block
+    %type <expressions> expr_list expr_block dispatch_args
     %type <expression> expression let_tail
     %type <case_> case
     %type <cases> cases
@@ -178,7 +178,7 @@
     stringtable.add_string(curr_filename)); }
     | CLASS TYPEID INHERITS TYPEID '{' features '}' ';'
     { $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
-    | error ';' { yyerrok; }
+    | error ';' class { yyerrok; }
     ;
     
     /* Feature list may be empty, but no empty features in list. */
@@ -224,12 +224,12 @@
     expression
         : OBJECTID ASSIGN expression
             { $$ = assign($1, $3); }
-        | expression '.' OBJECTID '(' expr_list ')'
-            { $$ = dispatch($1, $3, $5); }
-        | expression '@' TYPEID '.' OBJECTID '(' expr_list ')'
-            { $$ = static_dispatch($1, $3, $5, $7); } 
-        | OBJECTID '(' expr_list ')'
-            { $$ = dispatch(object(idtable.add_string("self")), $1, $3); }
+        | expression '.' OBJECTID dispatch_args
+            { $$ = dispatch($1, $3, $4); }
+        | expression '@' TYPEID '.' OBJECTID dispatch_args
+            { $$ = static_dispatch($1, $3, $5, $6); } 
+        | OBJECTID dispatch_args
+            { $$ = dispatch(object(idtable.add_string("self")), $1, $2); }
         | IF expression THEN expression ELSE expression FI
             { $$ = cond($2, $4, $6); } 
         | WHILE expression LOOP expression POOL
@@ -272,7 +272,7 @@
             { $$ = string_const($1); }
         | BOOL_CONST
             { $$ = bool_const($1); } 
-        | error ';' { yyerrok; }
+        | CASE error ESAC { yyerrok; }
         ;
 
     let_tail
@@ -287,6 +287,10 @@
         |  error ',' { yyerrok; }
         ;
 
+    dispatch_args : '(' expr_list ')' { $$ = $2; }
+                  | '(' error ')' { yyerrok; }
+                  ;
+
     expr_list :   /* empty */
                     { $$ = nil_Expressions(); }
               |    expression
@@ -299,6 +303,7 @@
                     { $$ = single_Expressions($1); }
                |  expr_block expression ';' 
                     { $$ = append_Expressions($1, single_Expressions($2)); }
+               |  error ';' { yyerrok; }
                ;
     
     /* end of grammar */
