@@ -258,6 +258,18 @@
             { $$ = leq($1, $3); }
         | expression '=' expression
             { $$ = eq($1, $3); }
+        | NOT expression
+            { $$ = comp($2); }
+        | '(' expression ')'
+            { $$ = $2; }
+        | OBJECTID
+            { $$ = object($1); }
+        | INT_CONST
+            { $$ = int_const($1); }
+        | STR_CONST
+            { $$ = string_const($1); }
+        | BOOL_CONST
+            { $$ = bool_const($1); } 
         ;
 
     let_tail
