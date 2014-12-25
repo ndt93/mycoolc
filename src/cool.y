@@ -178,6 +178,7 @@
     stringtable.add_string(curr_filename)); }
     | CLASS TYPEID INHERITS TYPEID '{' features '}' ';'
     { $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
+    | error ';' { yyerrok; }
     ;
     
     /* Feature list may be empty, but no empty features in list. */
@@ -195,6 +196,7 @@
                      { $$ = attr($1, $3, $5); }       
             |    OBJECTID ':' TYPEID ';'
                      { $$ = attr($1, $3, no_expr()); }
+            |    error ';' { yyerrok; }
             ;
 
     formals :   /* empty */
@@ -270,6 +272,7 @@
             { $$ = string_const($1); }
         | BOOL_CONST
             { $$ = bool_const($1); } 
+        | error ';' { yyerrok; }
         ;
 
     let_tail
@@ -281,6 +284,7 @@
                 { $$ = let($1, $3, no_expr(), $5); }
         |  OBJECTID ':' TYPEID ASSIGN expression ',' let_tail
                 { $$ = let($1, $3, $5, $7); }
+        |  error ',' { yyerrok; }
         ;
 
     expr_list :   /* empty */
