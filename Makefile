@@ -1,3 +1,4 @@
+# Lexer
 LIB= -lfl
 
 CSRC= lextest.cc utilities.cc stringtab.cc handle_flags.cc
@@ -23,3 +24,11 @@ cool-lex.cc: ${SRCDIR}/cool.flex
 
 lexer: ${OBJS:%.o=${SRCDIR}/%.o}
 	${CC} ${CFLAGS} ${OBJS} ${LIB} -o lexer
+
+# Parser
+
+BFLAGS = -d -v -y -b cool --debug -p cool_yy
+
+cool-parse.cc cool-parse.h: ${SRCDIR}/cool.y
+	bison ${BFLAGS} ${SRCDIR}/cool.y
+	mv -f cool.tab.c ${SRCDIR}/cool-parse.cc
