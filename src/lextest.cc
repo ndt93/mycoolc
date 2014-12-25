@@ -53,13 +53,13 @@ void handle_flags(int argc, char *argv[]);
 int  cool_yydebug;
 
 // defined in utilities.cc
-extern void dump_cool_token(ostream& out, int lineno, 
+extern void dump_cool_token(ostream& out, int lineno,
 			    int token, YYSTYPE yylval);
 
 
 int main(int argc, char** argv) {
 	int token;
-	
+
 	handle_flags(argc,argv);
 
 	while (optind < argc) {
