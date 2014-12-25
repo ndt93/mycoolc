@@ -235,6 +235,20 @@
             { $$ = typcase($2, $4); }
         | LET let_tail
             { $$ = $2; }
+        | NEW TYPEID
+            { $$ = new_($2); }
+        | ISVOID expression 
+            { $$ = isvoid($2); }
+        | expression '+' expression
+            { $$ = plus($1, $3); }
+        | expression '-' expression
+            { $$ = sub($1, $3); }
+        | expression '*' expression
+            { $$ = mul($1, $3); }
+        | expression '/' expression
+            { $$ = divide($1, $3); }
+        | '~' expression
+            { $$ = neg($2); }
         ;
 
     let_tail :    OBJECTID ':' TYPEID IN expression
