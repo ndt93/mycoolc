@@ -140,7 +140,7 @@
     %type <formals> formals
     %type <formal> formal
 
-    %type <expressions> expressions
+    %type <expressions> expr_list expr_block
     %type <expression> expression
     %type <case_> case
     %type <cases> cases
@@ -188,9 +188,54 @@
 
     feature :    OBJECTID '(' formals ')' ':' TYPEID '{' expression '}' ';'
                      { $$ = method($1, $3, $6, $8); }  
-            |    OBJECTID ':' TYPEID ASSIGN expression
+            |    OBJECTID ':' TYPEID ASSIGN expression ';'
                      { $$ = attr($1, $3, $5); }       
-    
+            |    OBJECTID ':' TYPEID ';'
+                     { $$ = attr($1, $3, no_expr()); }
+            ;
+
+    formals :   /* empty */
+                    { $$ = nil_Formals(); }
+            |   formal
+                    { $$ = single_Formals($1); } 
+            |   formals ',' formal
+                    { $$ = append_Formals($1, single_Formals($3)); }
+            ;
+
+    formal :    OBJECTID ':' TYPEID
+                    { $$ = formal($1, $3); } 
+           ;
+
+    cases :    case
+                  { $$ = single_Cases($1); }
+          |    cases case
+                  { $$ = append_Cases($1, single_Cases($2)); } 
+          ;
+
+    case :    OBJECTID ':' TYPEID DARROW expression ';'
+                 { $$ = branch($1, $3, $5); }
+         ;
+
+    expr_list :   /* empty */
+                    { $$ = nil_Expressions(); }
+              |    expression
+                    { $$ = single_Expressions($1); }
+              |    expr_list ',' expression
+                    { $$ = append_Expressions($1, $3); }
+              ;
+
+    expr_block :    expression ';'
+                        { $$ = single_Expressions($1); }
+               |    expr_block expression ';' 
+                        { $$ = append_Expressions($1, $2); }
+               ;
+
+    expression
+        : OBJECTID DARROW expression
+            { $$ = assign($1, $3); }
+        | expression '.' OBJECTID '(' expr_list ')'
+            { $$ = dispatch($1, $3, $5); }
+        ;
     
     /* end of grammar */
     %%
