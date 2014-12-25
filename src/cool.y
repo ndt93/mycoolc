@@ -147,11 +147,14 @@
     
     /* Precedence declarations go here. */
     %right ASSIGN 
-    %left LE '='
+    %left NOT
+    %nonassoc '<' LE '='
     %left '+' '-'
     %left '*' '/'
-    %left '~' NOT 
-    
+    %left ISVOID
+    %left '~'
+    %left '@'
+    %left '.'
     
     %%
     /* 
@@ -249,17 +252,24 @@
             { $$ = divide($1, $3); }
         | '~' expression
             { $$ = neg($2); }
+        | expression '<' expression
+            { $$ = lt($1, $3); }
+        | expression LE expression
+            { $$ = leq($1, $3); }
+        | expression '=' expression
+            { $$ = eq($1, $3); }
         ;
 
-    let_tail :    OBJECTID ':' TYPEID IN expression
-                      { $$ = let($1, $3, no_expr(), $5); }
-             |    OBJECTID ':' TYPEID ASSIGN expression IN expression
-                      { $$ = let($1, $3, $5, $7); }
-             |    OBJECTID ':' TYPEID ',' let_tail
-                      { $$ = let($1, $3, no_expr(), $5); }
-             |    OBJECTID ':' TYPEID ASSIGN expression ',' let_tail
-                      { $$ = let($1, $3, $5, $7); }
-             ;
+    let_tail
+        :  OBJECTID ':' TYPEID IN expression %prec ASSIGN
+                { $$ = let($1, $3, no_expr(), $5); }
+        |  OBJECTID ':' TYPEID ASSIGN expression IN expression %prec ASSIGN
+                { $$ = let($1, $3, $5, $7); }
+        |  OBJECTID ':' TYPEID ',' let_tail
+                { $$ = let($1, $3, no_expr(), $5); }
+        |  OBJECTID ':' TYPEID ASSIGN expression ',' let_tail
+                { $$ = let($1, $3, $5, $7); }
+        ;
 
     expr_list :   /* empty */
                     { $$ = nil_Expressions(); }
