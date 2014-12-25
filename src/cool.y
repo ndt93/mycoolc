@@ -141,7 +141,7 @@
     %type <formal> formal
 
     %type <expressions> expr_list expr_block
-    %type <expression> expression
+    %type <expression> expression let_tail
     %type <case_> case
     %type <cases> cases
     
@@ -216,26 +216,50 @@
                  { $$ = branch($1, $3, $5); }
          ;
 
+    expression
+        : OBJECTID ASSIGN expression
+            { $$ = assign($1, $3); }
+        | expression '.' OBJECTID '(' expr_list ')'
+            { $$ = dispatch($1, $3, $5); }
+        | expression '@' TYPEID '.' OBJECTID '(' expr_list ')'
+            { $$ = static_dispatch($1, $3, $5, $7); } 
+        | OBJECTID '(' expr_list ')'
+            { $$ = dispatch(object(idtable.add_string("self")), $1, $3); }
+        | IF expression THEN expression ELSE expression FI
+            { $$ = cond($2, $4, $6); } 
+        | WHILE expression LOOP expression POOL
+            { $$ = loop($2, $4); }
+        | '{' expr_block '}'
+            { $$ = block($2); }
+        | CASE expression OF cases ESAC
+            { $$ = typcase($2, $4); }
+        | LET let_tail
+            { $$ = $2; }
+        ;
+
+    let_tail :    OBJECTID ':' TYPEID IN expression
+                      { $$ = let($1, $3, no_expr(), $5); }
+             |    OBJECTID ':' TYPEID ASSIGN expression IN expression
+                      { $$ = let($1, $3, $5, $7); }
+             |    OBJECTID ':' TYPEID ',' let_tail
+                      { $$ = let($1, $3, no_expr(), $5); }
+             |    OBJECTID ':' TYPEID ASSIGN expression ',' let_tail
+                      { $$ = let($1, $3, $5, $7); }
+             ;
+
     expr_list :   /* empty */
                     { $$ = nil_Expressions(); }
               |    expression
                     { $$ = single_Expressions($1); }
               |    expr_list ',' expression
-                    { $$ = append_Expressions($1, $3); }
+                    { $$ = append_Expressions($1, single_Expressions($3)); }
               ;
 
-    expr_block :    expression ';'
-                        { $$ = single_Expressions($1); }
-               |    expr_block expression ';' 
-                        { $$ = append_Expressions($1, $2); }
+    expr_block :  expression ';'
+                    { $$ = single_Expressions($1); }
+               |  expr_block expression ';' 
+                    { $$ = append_Expressions($1, single_Expressions($2)); }
                ;
-
-    expression
-        : OBJECTID DARROW expression
-            { $$ = assign($1, $3); }
-        | expression '.' OBJECTID '(' expr_list ')'
-            { $$ = dispatch($1, $3, $5); }
-        ;
     
     /* end of grammar */
     %%
