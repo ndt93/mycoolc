@@ -1617,34 +1617,34 @@ yyreduce:
 
   case 3:
 #line 168 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.classes) = single_Classes((yyvsp[0].class_));
+    { (yyloc) = (yylsp[0]); SET_NODELOC((yylsp[0])); (yyval.classes) = single_Classes((yyvsp[0].class_));
     parse_results = (yyval.classes); }
 #line 1623 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 4:
 #line 171 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.classes) = append_Classes((yyvsp[-1].classes),single_Classes((yyvsp[0].class_))); 
+    { (yyloc) = (yylsp[-1]); SET_NODELOC((yylsp[-1])); (yyval.classes) = append_Classes((yyvsp[-1].classes),single_Classes((yyvsp[0].class_))); 
     parse_results = (yyval.classes); }
 #line 1630 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 5:
 #line 177 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.class_) = class_((yyvsp[-4].symbol),idtable.add_string("Object"),(yyvsp[-2].features),
+    { (yyloc) = (yylsp[-5]); SET_NODELOC((yylsp[-5])); (yyval.class_) = class_((yyvsp[-4].symbol),idtable.add_string("Object"),(yyvsp[-2].features),
     stringtable.add_string(curr_filename)); }
 #line 1637 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 6:
 #line 180 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.class_) = class_((yyvsp[-6].symbol),(yyvsp[-4].symbol),(yyvsp[-2].features),stringtable.add_string(curr_filename)); }
+    { (yyloc) = (yylsp[-7]); SET_NODELOC((yylsp[-7])); (yyval.class_) = class_((yyvsp[-6].symbol),(yyvsp[-4].symbol),(yyvsp[-2].features),stringtable.add_string(curr_filename)); }
 #line 1643 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 7:
 #line 181 "src/cool.y" /* yacc.c:1646  */
-    { yyerrok; }
+    { (yyloc) = (yylsp[0]); SET_NODELOC((yylsp[0])); yyerrok; }
 #line 1649 "cool.tab.c" /* yacc.c:1646  */
     break;
 
@@ -1656,37 +1656,37 @@ yyreduce:
 
   case 9:
 #line 188 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.features) = single_Features((yyvsp[0].feature)); }
+    { (yyloc) = (yylsp[0]); SET_NODELOC((yylsp[0])); (yyval.features) = single_Features((yyvsp[0].feature)); }
 #line 1661 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 10:
 #line 190 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.features) =  append_Features((yyvsp[-1].features), single_Features((yyvsp[0].feature))); }
+    { (yyloc) = (yylsp[-1]); SET_NODELOC((yylsp[-1])); (yyval.features) =  append_Features((yyvsp[-1].features), single_Features((yyvsp[0].feature))); }
 #line 1667 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 11:
 #line 194 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.feature) = method((yyvsp[-9].symbol), (yyvsp[-7].formals), (yyvsp[-4].symbol), (yyvsp[-2].expression)); }
+    { (yyloc) = (yylsp[-9]); SET_NODELOC((yylsp[-9])); (yyval.feature) = method((yyvsp[-9].symbol), (yyvsp[-7].formals), (yyvsp[-4].symbol), (yyvsp[-2].expression)); }
 #line 1673 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 12:
 #line 196 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.feature) = attr((yyvsp[-5].symbol), (yyvsp[-3].symbol), (yyvsp[-1].expression)); }
+    { (yyloc) = (yylsp[-5]); SET_NODELOC((yylsp[-5])); (yyval.feature) = attr((yyvsp[-5].symbol), (yyvsp[-3].symbol), (yyvsp[-1].expression)); }
 #line 1679 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 13:
 #line 198 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.feature) = attr((yyvsp[-3].symbol), (yyvsp[-1].symbol), no_expr()); }
+    { (yyloc) = (yylsp[-3]); SET_NODELOC((yylsp[-3])); (yyval.feature) = attr((yyvsp[-3].symbol), (yyvsp[-1].symbol), no_expr()); }
 #line 1685 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 14:
 #line 199 "src/cool.y" /* yacc.c:1646  */
-    { yyerrok; }
+    { (yyloc) = (yylsp[0]); SET_NODELOC((yylsp[0])); yyerrok; }
 #line 1691 "cool.tab.c" /* yacc.c:1646  */
     break;
 
@@ -1698,235 +1698,235 @@ yyreduce:
 
   case 16:
 #line 205 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.formals) = single_Formals((yyvsp[0].formal)); }
+    { (yyloc) = (yylsp[0]); SET_NODELOC((yylsp[0])); (yyval.formals) = single_Formals((yyvsp[0].formal)); }
 #line 1703 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 17:
 #line 207 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.formals) = append_Formals((yyvsp[-2].formals), single_Formals((yyvsp[0].formal))); }
+    { (yyloc) = (yylsp[-2]); SET_NODELOC((yylsp[-2])); (yyval.formals) = append_Formals((yyvsp[-2].formals), single_Formals((yyvsp[0].formal))); }
 #line 1709 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 18:
 #line 211 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.formal) = formal((yyvsp[-2].symbol), (yyvsp[0].symbol)); }
+    { (yyloc) = (yylsp[-2]); SET_NODELOC((yylsp[-2])); (yyval.formal) = formal((yyvsp[-2].symbol), (yyvsp[0].symbol)); }
 #line 1715 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 19:
 #line 215 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.cases) = single_Cases((yyvsp[0].case_)); }
+    { (yyloc) = (yylsp[0]); SET_NODELOC((yylsp[0])); (yyval.cases) = single_Cases((yyvsp[0].case_)); }
 #line 1721 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 20:
 #line 217 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.cases) = append_Cases((yyvsp[-1].cases), single_Cases((yyvsp[0].case_))); }
+    { (yyloc) = (yylsp[-1]); SET_NODELOC((yylsp[-1])); (yyval.cases) = append_Cases((yyvsp[-1].cases), single_Cases((yyvsp[0].case_))); }
 #line 1727 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 21:
 #line 221 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.case_) = branch((yyvsp[-5].symbol), (yyvsp[-3].symbol), (yyvsp[-1].expression)); }
+    { (yyloc) = (yylsp[-5]); SET_NODELOC((yylsp[-5])); (yyval.case_) = branch((yyvsp[-5].symbol), (yyvsp[-3].symbol), (yyvsp[-1].expression)); }
 #line 1733 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 22:
 #line 226 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = assign((yyvsp[-2].symbol), (yyvsp[0].expression)); }
+    { (yyloc) = (yylsp[-2]); SET_NODELOC((yylsp[-2])); (yyval.expression) = assign((yyvsp[-2].symbol), (yyvsp[0].expression)); }
 #line 1739 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 23:
 #line 228 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = dispatch((yyvsp[-3].expression), (yyvsp[-1].symbol), (yyvsp[0].expressions)); }
+    { (yyloc) = (yylsp[-3]); SET_NODELOC((yylsp[-3])); (yyval.expression) = dispatch((yyvsp[-3].expression), (yyvsp[-1].symbol), (yyvsp[0].expressions)); }
 #line 1745 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 24:
 #line 230 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = static_dispatch((yyvsp[-5].expression), (yyvsp[-3].symbol), (yyvsp[-1].symbol), (yyvsp[0].expressions)); }
+    { (yyloc) = (yylsp[-5]); SET_NODELOC((yylsp[-5])); (yyval.expression) = static_dispatch((yyvsp[-5].expression), (yyvsp[-3].symbol), (yyvsp[-1].symbol), (yyvsp[0].expressions)); }
 #line 1751 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 25:
 #line 232 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = dispatch(object(idtable.add_string("self")), (yyvsp[-1].symbol), (yyvsp[0].expressions)); }
+    { (yyloc) = (yylsp[-1]); SET_NODELOC((yylsp[-1])); (yyval.expression) = dispatch(object(idtable.add_string("self")), (yyvsp[-1].symbol), (yyvsp[0].expressions)); }
 #line 1757 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 26:
 #line 234 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = cond((yyvsp[-5].expression), (yyvsp[-3].expression), (yyvsp[-1].expression)); }
+    { (yyloc) = (yylsp[-6]); SET_NODELOC((yylsp[-6])); (yyval.expression) = cond((yyvsp[-5].expression), (yyvsp[-3].expression), (yyvsp[-1].expression)); }
 #line 1763 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 27:
 #line 236 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = loop((yyvsp[-3].expression), (yyvsp[-1].expression)); }
+    { (yyloc) = (yylsp[-4]); SET_NODELOC((yylsp[-4])); (yyval.expression) = loop((yyvsp[-3].expression), (yyvsp[-1].expression)); }
 #line 1769 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 28:
 #line 238 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = block((yyvsp[-1].expressions)); }
+    { (yyloc) = (yylsp[-1]); SET_NODELOC((yylsp[-1])); (yyval.expression) = block((yyvsp[-1].expressions)); }
 #line 1775 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 29:
 #line 240 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = typcase((yyvsp[-3].expression), (yyvsp[-1].cases)); }
+    { (yyloc) = (yylsp[-4]); SET_NODELOC((yylsp[-4])); (yyval.expression) = typcase((yyvsp[-3].expression), (yyvsp[-1].cases)); }
 #line 1781 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 30:
 #line 242 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = (yyvsp[0].expression); }
+    { (yyloc) = (yylsp[-1]); SET_NODELOC((yylsp[-1])); (yyval.expression) = (yyvsp[0].expression); }
 #line 1787 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 31:
 #line 244 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = new_((yyvsp[0].symbol)); }
+    { (yyloc) = (yylsp[-1]); SET_NODELOC((yylsp[-1])); (yyval.expression) = new_((yyvsp[0].symbol)); }
 #line 1793 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 32:
 #line 246 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = isvoid((yyvsp[0].expression)); }
+    { (yyloc) = (yylsp[-1]); SET_NODELOC((yylsp[-1])); (yyval.expression) = isvoid((yyvsp[0].expression)); }
 #line 1799 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 33:
 #line 248 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = plus((yyvsp[-2].expression), (yyvsp[0].expression)); }
+    { (yyloc) = (yylsp[-2]); SET_NODELOC((yylsp[-2])); (yyval.expression) = plus((yyvsp[-2].expression), (yyvsp[0].expression)); }
 #line 1805 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 34:
 #line 250 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = sub((yyvsp[-2].expression), (yyvsp[0].expression)); }
+    { (yyloc) = (yylsp[-2]); SET_NODELOC((yylsp[-2])); (yyval.expression) = sub((yyvsp[-2].expression), (yyvsp[0].expression)); }
 #line 1811 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 35:
 #line 252 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = mul((yyvsp[-2].expression), (yyvsp[0].expression)); }
+    { (yyloc) = (yylsp[-2]); SET_NODELOC((yylsp[-2])); (yyval.expression) = mul((yyvsp[-2].expression), (yyvsp[0].expression)); }
 #line 1817 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 36:
 #line 254 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = divide((yyvsp[-2].expression), (yyvsp[0].expression)); }
+    { (yyloc) = (yylsp[-2]); SET_NODELOC((yylsp[-2])); (yyval.expression) = divide((yyvsp[-2].expression), (yyvsp[0].expression)); }
 #line 1823 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 37:
 #line 256 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = neg((yyvsp[0].expression)); }
+    { (yyloc) = (yylsp[-1]); SET_NODELOC((yylsp[-1])); (yyval.expression) = neg((yyvsp[0].expression)); }
 #line 1829 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 38:
 #line 258 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = lt((yyvsp[-2].expression), (yyvsp[0].expression)); }
+    { (yyloc) = (yylsp[-2]); SET_NODELOC((yylsp[-2])); (yyval.expression) = lt((yyvsp[-2].expression), (yyvsp[0].expression)); }
 #line 1835 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 39:
 #line 260 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = leq((yyvsp[-2].expression), (yyvsp[0].expression)); }
+    { (yyloc) = (yylsp[-2]); SET_NODELOC((yylsp[-2])); (yyval.expression) = leq((yyvsp[-2].expression), (yyvsp[0].expression)); }
 #line 1841 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 40:
 #line 262 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = eq((yyvsp[-2].expression), (yyvsp[0].expression)); }
+    { (yyloc) = (yylsp[-2]); SET_NODELOC((yylsp[-2])); (yyval.expression) = eq((yyvsp[-2].expression), (yyvsp[0].expression)); }
 #line 1847 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 41:
 #line 264 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = comp((yyvsp[0].expression)); }
+    { (yyloc) = (yylsp[-1]); SET_NODELOC((yylsp[-1])); (yyval.expression) = comp((yyvsp[0].expression)); }
 #line 1853 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 42:
 #line 266 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = (yyvsp[-1].expression); }
+    { (yyloc) = (yylsp[-1]); SET_NODELOC((yylsp[-1])); (yyval.expression) = (yyvsp[-1].expression); }
 #line 1859 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 43:
 #line 268 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = object((yyvsp[0].symbol)); }
+    { (yyloc) = (yylsp[0]); SET_NODELOC((yylsp[0])); (yyval.expression) = object((yyvsp[0].symbol)); }
 #line 1865 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 44:
 #line 270 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = int_const((yyvsp[0].symbol)); }
+    { (yyloc) = (yylsp[0]); SET_NODELOC((yylsp[0])); (yyval.expression) = int_const((yyvsp[0].symbol)); }
 #line 1871 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 45:
 #line 272 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = string_const((yyvsp[0].symbol)); }
+    { (yyloc) = (yylsp[0]); SET_NODELOC((yylsp[0])); (yyval.expression) = string_const((yyvsp[0].symbol)); }
 #line 1877 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 46:
 #line 274 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = bool_const((yyvsp[0].boolean)); }
+    { (yyloc) = (yylsp[0]); SET_NODELOC((yylsp[0])); (yyval.expression) = bool_const((yyvsp[0].boolean)); }
 #line 1883 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 47:
 #line 275 "src/cool.y" /* yacc.c:1646  */
-    { yyerrok; }
+    { (yyloc) = (yylsp[0]); SET_NODELOC((yylsp[0])); yyerrok; }
 #line 1889 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 48:
 #line 280 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = let((yyvsp[-4].symbol), (yyvsp[-2].symbol), no_expr(), (yyvsp[0].expression)); }
+    { (yyloc) = (yylsp[-4]); SET_NODELOC((yylsp[-4])); (yyval.expression) = let((yyvsp[-4].symbol), (yyvsp[-2].symbol), no_expr(), (yyvsp[0].expression)); }
 #line 1895 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 49:
 #line 282 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = let((yyvsp[-6].symbol), (yyvsp[-4].symbol), (yyvsp[-2].expression), (yyvsp[0].expression)); }
+    { (yyloc) = (yylsp[-6]); SET_NODELOC((yylsp[-6])); (yyval.expression) = let((yyvsp[-6].symbol), (yyvsp[-4].symbol), (yyvsp[-2].expression), (yyvsp[0].expression)); }
 #line 1901 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 50:
 #line 284 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = let((yyvsp[-4].symbol), (yyvsp[-2].symbol), no_expr(), (yyvsp[0].expression)); }
+    { (yyloc) = (yylsp[-4]); SET_NODELOC((yylsp[-4])); (yyval.expression) = let((yyvsp[-4].symbol), (yyvsp[-2].symbol), no_expr(), (yyvsp[0].expression)); }
 #line 1907 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 51:
 #line 286 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expression) = let((yyvsp[-6].symbol), (yyvsp[-4].symbol), (yyvsp[-2].expression), (yyvsp[0].expression)); }
+    { (yyloc) = (yylsp[-6]); SET_NODELOC((yylsp[-6])); (yyval.expression) = let((yyvsp[-6].symbol), (yyvsp[-4].symbol), (yyvsp[-2].expression), (yyvsp[0].expression)); }
 #line 1913 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 52:
 #line 287 "src/cool.y" /* yacc.c:1646  */
-    { yyerrok; }
+    { (yyloc) = (yylsp[0]); SET_NODELOC((yylsp[0])); yyerrok; }
 #line 1919 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 53:
 #line 290 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expressions) = (yyvsp[-1].expressions); }
+    { (yyloc) = (yylsp[-1]); SET_NODELOC((yylsp[-1])); (yyval.expressions) = (yyvsp[-1].expressions); }
 #line 1925 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 54:
 #line 291 "src/cool.y" /* yacc.c:1646  */
-    { yyerrok; }
+    { (yyloc) = (yylsp[0]); SET_NODELOC((yylsp[0])); yyerrok; }
 #line 1931 "cool.tab.c" /* yacc.c:1646  */
     break;
 
@@ -1938,31 +1938,31 @@ yyreduce:
 
   case 56:
 #line 297 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expressions) = single_Expressions((yyvsp[0].expression)); }
+    { (yyloc) = (yylsp[0]); SET_NODELOC((yylsp[0])); (yyval.expressions) = single_Expressions((yyvsp[0].expression)); }
 #line 1943 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 57:
 #line 299 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expressions) = append_Expressions((yyvsp[-2].expressions), single_Expressions((yyvsp[0].expression))); }
+    { (yyloc) = (yylsp[-2]); SET_NODELOC((yylsp[-2])); (yyval.expressions) = append_Expressions((yyvsp[-2].expressions), single_Expressions((yyvsp[0].expression))); }
 #line 1949 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 58:
 #line 303 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expressions) = single_Expressions((yyvsp[-1].expression)); }
+    { (yyloc) = (yylsp[-1]); SET_NODELOC((yylsp[-1])); (yyval.expressions) = single_Expressions((yyvsp[-1].expression)); }
 #line 1955 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 59:
 #line 305 "src/cool.y" /* yacc.c:1646  */
-    { (yyval.expressions) = append_Expressions((yyvsp[-2].expressions), single_Expressions((yyvsp[-1].expression))); }
+    { (yyloc) = (yylsp[-2]); SET_NODELOC((yylsp[-2])); (yyval.expressions) = append_Expressions((yyvsp[-2].expressions), single_Expressions((yyvsp[-1].expression))); }
 #line 1961 "cool.tab.c" /* yacc.c:1646  */
     break;
 
   case 60:
 #line 306 "src/cool.y" /* yacc.c:1646  */
-    { yyerrok; }
+    { (yyloc) = (yylsp[0]); SET_NODELOC((yylsp[0])); yyerrok; }
 #line 1967 "cool.tab.c" /* yacc.c:1646  */
     break;
 
