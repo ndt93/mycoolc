@@ -27,7 +27,7 @@ lexer: ${OBJS:%.o=${SRCDIR}/%.o}
 
 # Parser
 CSRC1= parser-phase.cc utilities.cc stringtab.cc dumptype.cc \
-       tree.cc cool-tree.cc cool-lex.cc  handle_flags.cc
+       tree.cc cool-tree.cc cool-lex.cc handle_flags.cc
 CGEN1= cool-parse.cc
 CFIL1 = ${CSRC1} ${CGEN1}
 OBJS1 = ${CFIL1:.cc=.o}
@@ -40,3 +40,6 @@ cool-parse.cc cool-parse.h: ${SRCDIR}/cool.y
 
 parser: ${OBJS1:%.o=${SRCDIR}/%.o}
 	${CC} ${CFLAGS} ${OBJS1} ${LIB} -o parser
+
+clean:
+	rm *.o

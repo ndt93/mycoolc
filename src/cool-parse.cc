@@ -77,45 +77,45 @@
   #include "cool-tree.h"
   #include "stringtab.h"
   #include "utilities.h"
-  
+
   extern char *curr_filename;
-  
-  
+
+
   /* Locations */
   #define YYLTYPE int              /* the type of locations */
   #define cool_yylloc curr_lineno  /* use the curr_lineno from the lexer
   for the location of tokens */
-    
+
     extern int node_lineno;          /* set before constructing a tree node
     to whatever you want the line number
     for the tree node to be */
-      
-      
+
+
       #define YYLLOC_DEFAULT(Current, Rhs, N)         \
       Current = Rhs[1];                             \
       node_lineno = Current;
-    
-    
+
+
     #define SET_NODELOC(Current)  \
     node_lineno = Current;
-    
+
     /* IMPORTANT NOTE ON LINE NUMBERS
     *********************************
-    * The above definitions and macros cause every terminal in your grammar to 
+    * The above definitions and macros cause every terminal in your grammar to
     * have the line number supplied by the lexer. The only task you have to
     * implement for line numbers to work correctly, is to use SET_NODELOC()
     * before constructing any constructs from non-terminals in your grammar.
-    * Example: Consider you are matching on the following very restrictive 
-    * (fictional) construct that matches a plus between two integer constants. 
+    * Example: Consider you are matching on the following very restrictive
+    * (fictional) construct that matches a plus between two integer constants.
     * (SUCH A RULE SHOULD NOT BE  PART OF YOUR PARSER):
-    
-    plus_consts	: INT_CONST '+' INT_CONST 
-    
+
+    plus_consts	: INT_CONST '+' INT_CONST
+
     * where INT_CONST is a terminal for an integer constant. Now, a correct
     * action for this rule that attaches the correct line number to plus_const
     * would look like the following:
-    
-    plus_consts	: INT_CONST '+' INT_CONST 
+
+    plus_consts	: INT_CONST '+' INT_CONST
     {
       // Set the line number of the current non-terminal:
       // ***********************************************
@@ -124,31 +124,31 @@
       //
       // Here, we choose the line number of the last INT_CONST (@3) as the
       // line number of the resulting expression (@$). You are free to pick
-      // any reasonable line as the line number of non-terminals. If you 
-      // omit the statement @$=..., bison has default rules for deciding which 
+      // any reasonable line as the line number of non-terminals. If you
+      // omit the statement @$=..., bison has default rules for deciding which
       // line number to use. Check the manual for details if you are interested.
       @$ = @3;
-      
-      
+
+
       // Observe that we call SET_NODELOC(@3); this will set the global variable
-      // node_lineno to @3. Since the constructor call "plus" uses the value of 
+      // node_lineno to @3. Since the constructor call "plus" uses the value of
       // this global, the plus node will now have the correct line number.
       SET_NODELOC(@3);
-      
+
       // construct the result node:
       $$ = plus(int_const($1), int_const($3));
     }
-    
+
     */
-    
-    
-    
+
+
+
     void yyerror(char *s);        /*  defined below; called for each parse error */
     extern int yylex();           /*  the entry point to the lexer  */
-    
+
     /************************************************************************/
     /*                DONT CHANGE ANYTHING IN THIS SECTION                  */
-    
+
     Program ast_root;	      /* the result of the parse  */
     Classes parse_results;        /* for use in semantic analysis */
     int omerrs = 0;               /* number of errors in lexing and parsing */
@@ -1624,7 +1624,7 @@ yyreduce:
 
   case 4:
 #line 171 "src/cool.y" /* yacc.c:1646  */
-    { (yyloc) = (yylsp[-1]); SET_NODELOC((yylsp[-1])); (yyval.classes) = append_Classes((yyvsp[-1].classes),single_Classes((yyvsp[0].class_))); 
+    { (yyloc) = (yylsp[-1]); SET_NODELOC((yylsp[-1])); (yyval.classes) = append_Classes((yyvsp[-1].classes),single_Classes((yyvsp[0].class_)));
     parse_results = (yyval.classes); }
 #line 1630 "cool.tab.c" /* yacc.c:1646  */
     break;
@@ -2204,19 +2204,19 @@ yyreturn:
 }
 #line 310 "src/cool.y" /* yacc.c:1906  */
 
-    
+
     /* This function is called automatically when Bison detects a parse error. */
     void yyerror(char *s)
     {
       extern int curr_lineno;
-      
+
       cerr << "\"" << curr_filename << "\", line " << curr_lineno << ": " \
       << s << " at or near ";
       print_cool_token(yychar);
       cerr << endl;
       omerrs++;
-      
+
       if(omerrs>50) {fprintf(stdout, "More than 50 errors\n"); exit(1);}
     }
-    
-    
+
+

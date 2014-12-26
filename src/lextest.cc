@@ -16,7 +16,7 @@
 
 #include <stdio.h>      // needed on Linux system
 #include <unistd.h>     // for getopt
-#include "cool-parse.h" // bison-generated file; defines tokens
+#include "cool-parse.h" // bison-generated file; detoken_filees tokens
 #include "utilities.h"
 
 //
@@ -25,14 +25,14 @@
 //
 int curr_lineno = 1;
 char *curr_filename = "<stdin>"; // this name is arbitrary
-FILE *fin;   // This is the file pointer from which the lexer reads its input.
+FILE *token_file;   // This is the file pointer from which the lexer reads its input.
 
 //
 //  cool_yylex() is the function produced by flex. It returns the next
 //  token each time it is called.
 //
 extern int cool_yylex();
-YYSTYPE cool_yylval;           // Not compiled with parser, so must define this.
+YYSTYPE cool_yylval;           // Not compiled with parser, so must detoken_filee this.
 
 extern int optind;  // used for option processing (man 3 getopt for more info)
 
@@ -52,7 +52,7 @@ void handle_flags(int argc, char *argv[]);
 //
 int  cool_yydebug;
 
-// defined in utilities.cc
+// detoken_fileed in utilities.cc
 extern void dump_cool_token(ostream& out, int lineno,
 			    int token, YYSTYPE yylval);
 
@@ -63,8 +63,8 @@ int main(int argc, char** argv) {
 	handle_flags(argc,argv);
 
 	while (optind < argc) {
-	    fin = fopen(argv[optind], "r");
-	    if (fin == NULL) {
+	    token_file = fopen(argv[optind], "r");
+	    if (token_file == NULL) {
 		cerr << "Could not open input file " << argv[optind] << endl;
 		exit(1);
 	    }
@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
 	    while ((token = cool_yylex()) != 0) {
 		dump_cool_token(cout, curr_lineno, token, cool_yylval);
 	    }
-	    fclose(fin);
+	    fclose(token_file);
 	    optind++;
 	}
 	exit(0);
