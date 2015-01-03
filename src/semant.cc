@@ -4,6 +4,9 @@
 #include "semant.h"
 #include "utilities.h"
 
+#define OBJ_CLASS_INDEX 0
+#define NO_CLASS_INDEX 0
+#define NUM_BASIC_CLASSES 5
 
 extern int semant_debug;
 extern char *curr_filename;
@@ -79,12 +82,91 @@ static void initialize_constants(void)
     val         = idtable.add_string("_val");
 }
 
+Symbol class__class::get_name() {
+    return name;
+}
+
+Symbol class__class::get_parent() {
+    return parent;
+}
 
 
-ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
+ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr)
+{
+    if (classes->len() == 0) {
+        semant_error() << "No class definition found\n";
+        return;
+    }
 
-    /* Fill this in */
+    /* Allocate memory for the inheritence table(graph) */
+    num_classes = classes->len() + NUM_BASIC_CLASSES;
+    table = new TableEntry[num_classes];
 
+    install_basic_classes();
+
+    for (int i=0, index=5; classes->more(i); i = classes->next(i), index++) {
+        table[index].class_ = classes->nth(i);
+        table[index].parent = -1;
+    }
+
+    if (validate_names())
+        validate_inheritance();
+}
+
+ClassTable::~ClassTable() {
+    delete table;
+}
+
+bool ClassTable::validate_names() {
+    for (int i = 0; i < num_classes; i++) {
+        for (int j = i + 1; j < num_classes; j++) {
+            if (table[i].class_->get_name() == table[j].class_->get_name()) {
+                semant_error(table[i].class_) << "Repeated class name\n";
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+bool ClassTable::validate_inheritance() {
+    /* Build inheritance class */
+    for (int i = NUM_BASIC_CLASSES; i < num_classes; i++) {
+        for (int j = 0; j < num_classes; j++) {
+            if (table[j].class_->get_name() == table[i].class_->get_parent()) {
+                table[i].parent = j;
+                break;
+            }
+        }
+
+        if (table[i].parent == -1) {
+            semant_error(table[i].class_) << "Parent class does not exist\n";
+            return false;
+        }
+    }
+
+    /* Check for cycle */
+    bool* checked = new bool[num_classes]();
+    bool* visited = new bool[num_classes];
+
+    for (int i = NUM_BASIC_CLASSES; i < num_classes; i++) {
+        int cur_class = i;
+        memset(visited, 0, num_classes);
+
+        while (cur_class != -1 && !checked[cur_class]) {
+            if (visited[cur_class]) {
+                semant_error(table[cur_class].class_) <<
+                    "Cycle detected in inheritance graph\n";
+                return false;
+            }
+
+            visited[i] = true;
+            cur_class = table[cur_class].parent;
+        }
+    }
+
+    return true;
 }
 
 void ClassTable::install_basic_classes() {
@@ -120,6 +202,8 @@ void ClassTable::install_basic_classes() {
 					       single_Features(method(type_name, nil_Formals(), Str, no_expr()))),
 			       single_Features(method(copy, nil_Formals(), SELF_TYPE, no_expr()))),
 	       filename);
+    table[OBJ_CLASS_INDEX].class_ = Object_class;
+    table[OBJ_CLASS_INDEX].parent = NO_CLASS_INDEX;
 
     //
     // The IO class inherits from Object. Its methods are
@@ -141,6 +225,8 @@ void ClassTable::install_basic_classes() {
 					       single_Features(method(in_string, nil_Formals(), Str, no_expr()))),
 			       single_Features(method(in_int, nil_Formals(), Int, no_expr()))),
 	       filename);
+    table[1].class_ = IO_class;
+    table[1].parent = OBJ_CLASS_INDEX;
 
     //
     // The Int class has no methods and only a single attribute, the
@@ -151,12 +237,16 @@ void ClassTable::install_basic_classes() {
 	       Object,
 	       single_Features(attr(val, prim_slot, no_expr())),
 	       filename);
+    table[2].class_ = Int_class;
+    table[2].parent = OBJ_CLASS_INDEX;
 
     //
     // Bool also has only the "val" slot.
     //
     Class_ Bool_class =
 	class_(Bool, Object, single_Features(attr(val, prim_slot, no_expr())),filename);
+    table[3].class_ = Bool_class;
+    table[3].parent = OBJ_CLASS_INDEX;
 
     //
     // The class Str has a number of slots and operations:
@@ -186,6 +276,8 @@ void ClassTable::install_basic_classes() {
 						      Str,
 						      no_expr()))),
 	       filename);
+    table[num_classes - 5].class_ = Str_class;
+    table[num_classes - 5].parent = OBJ_CLASS_INDEX;
 }
 
 ////////////////////////////////////////////////////////////////////
