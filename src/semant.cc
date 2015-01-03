@@ -172,21 +172,11 @@ bool ClassTable::validate_inheritance() {
     bool* visited = new bool[num_classes];
 
     for (int i = NUM_BASIC_CLASSES; i < num_classes; i++) {
-        int cur_class = i;
         memset(visited, 0, num_classes);
 
-        while (cur_class != NO_CLASS_INDEX && !checked[cur_class]) {
-            if (visited[cur_class]) {
-                semant_error(table[cur_class].class_) <<
-                    "Cycle detected in inheritance graph\n";
-                return false;
-            }
-
-            visited[cur_class] = true;
-            cur_class = table[cur_class].parent;
+        if (!checked[i] && has_cycle(checked, visited, i)) {
+            return false;
         }
-
-        checked[i] = true;
     }
 
     if (semant_debug) {
@@ -197,6 +187,21 @@ bool ClassTable::validate_inheritance() {
     delete visited;
 
     return true;
+}
+
+bool ClassTable::has_cycle(bool* checked, bool* visited, int index) {
+    if (index == -1) {
+        return false;
+    } else if (visited[index]) {
+        semant_error(table[index].class_) <<
+            "Cycle detected in inheritance graph\n";
+        return true;
+    }
+
+    visited[index] = true;
+    bool rval = has_cycle(checked, visited, table[index].parent);
+    checked[index] = true;
+    return rval;
 }
 
 void ClassTable::install_basic_classes() {

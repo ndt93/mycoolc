@@ -35,7 +35,8 @@ private:
   int num_classes;
 
   bool validate_names(); // Check if all classes have different names
-  bool validate_inheritance(); // Check for cycles in inheritance graph
+  bool validate_inheritance(); // Check if inheritance graph is valid
+  bool has_cycle(bool*, bool*, int); // Detect cycle in inheritance graph
 
 public:
   ClassTable(Classes);
