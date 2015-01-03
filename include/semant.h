@@ -15,7 +15,7 @@ class ClassTable;
 typedef ClassTable *ClassTableP;
 
 struct TableEntry {
-    Class__class *class_;
+    Class_ class_;
     int parent;
 };
 

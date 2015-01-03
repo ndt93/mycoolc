@@ -5,7 +5,7 @@
 #include "utilities.h"
 
 #define OBJ_CLASS_INDEX 0
-#define NO_CLASS_INDEX 0
+#define NO_CLASS_INDEX -1
 #define NUM_BASIC_CLASSES 5
 
 extern int semant_debug;
@@ -106,7 +106,7 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr)
 
     for (int i=0, index=5; classes->more(i); i = classes->next(i), index++) {
         table[index].class_ = classes->nth(i);
-        table[index].parent = -1;
+        table[index].parent = NO_CLASS_INDEX;
     }
 
     if (validate_names())
@@ -118,32 +118,53 @@ ClassTable::~ClassTable() {
 }
 
 bool ClassTable::validate_names() {
+    if (semant_debug) {
+        printf("Validating class names...\n");
+    }
+
     for (int i = 0; i < num_classes; i++) {
         for (int j = i + 1; j < num_classes; j++) {
             if (table[i].class_->get_name() == table[j].class_->get_name()) {
-                semant_error(table[i].class_) << "Repeated class name\n";
+                if (i < NUM_BASIC_CLASSES)
+                    semant_error(table[i].class_)
+                        << "Cannot redefine built-in classes\n";
+                else
+                    semant_error(table[i].class_) << "Repeated class name\n";
                 return false;
             }
         }
+    }
+
+    if (semant_debug) {
+        printf("Class names ok\n");
     }
 
     return true;
 }
 
 bool ClassTable::validate_inheritance() {
+    if (semant_debug) {
+        printf("Building inheritance graph...\n");
+    }
+
     /* Build inheritance class */
     for (int i = NUM_BASIC_CLASSES; i < num_classes; i++) {
         for (int j = 0; j < num_classes; j++) {
-            if (table[j].class_->get_name() == table[i].class_->get_parent()) {
+            if (i != j &&
+                table[j].class_->get_name() == table[i].class_->get_parent()) {
                 table[i].parent = j;
                 break;
             }
         }
 
-        if (table[i].parent == -1) {
-            semant_error(table[i].class_) << "Parent class does not exist\n";
+        if (table[i].parent == NO_CLASS_INDEX) {
+            semant_error(table[i].class_) << "Invalid parent class\n";
             return false;
         }
+    }
+
+    if (semant_debug) {
+        printf("Validating inheritance graph...\n");
     }
 
     /* Check for cycle */
@@ -154,17 +175,26 @@ bool ClassTable::validate_inheritance() {
         int cur_class = i;
         memset(visited, 0, num_classes);
 
-        while (cur_class != -1 && !checked[cur_class]) {
+        while (cur_class != NO_CLASS_INDEX && !checked[cur_class]) {
             if (visited[cur_class]) {
                 semant_error(table[cur_class].class_) <<
                     "Cycle detected in inheritance graph\n";
                 return false;
             }
 
-            visited[i] = true;
+            visited[cur_class] = true;
             cur_class = table[cur_class].parent;
         }
+
+        checked[i] = true;
     }
+
+    if (semant_debug) {
+        printf("Inheritance graph ok...\n");
+    }
+
+    delete checked;
+    delete visited;
 
     return true;
 }
@@ -276,8 +306,8 @@ void ClassTable::install_basic_classes() {
 						      Str,
 						      no_expr()))),
 	       filename);
-    table[num_classes - 5].class_ = Str_class;
-    table[num_classes - 5].parent = OBJ_CLASS_INDEX;
+    table[4].class_ = Str_class;
+    table[4].parent = OBJ_CLASS_INDEX;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -327,12 +357,14 @@ ostream& ClassTable::semant_error()
      errors. Part 2) can be done in a second stage, when you want
      to build mycoolc.
  */
+
 void program_class::semant()
 {
     initialize_constants();
 
     /* ClassTable constructor may do some semantic analysis */
     ClassTable *classtable = new ClassTable(classes);
+    //printf("Heyyy: %d\n", classtable->errors());
 
     /* some semantic analysis code may go here */
 
