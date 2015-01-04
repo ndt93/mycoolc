@@ -82,14 +82,8 @@ static void initialize_constants(void)
     val         = idtable.add_string("_val");
 }
 
-Symbol class__class::get_name() {
-    return name;
-}
-
-Symbol class__class::get_parent() {
-    return parent;
-}
-
+static SymbolTable<Symbol, Symbol> vars_env;
+static ClassTable* classtable;
 
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr)
 {
@@ -202,6 +196,16 @@ bool ClassTable::has_cycle(bool* checked, bool* visited, int index) {
     bool rval = has_cycle(checked, visited, table[index].parent);
     checked[index] = true;
     return rval;
+}
+
+int ClassTable::get_class_index(Symbol class_name)
+{
+    for (int i = 0; i < num_classes; i++) {
+        if (table[i].class_->get_name() == class_name)
+            return i;
+    }
+
+    return NO_CLASS_INDEX;
 }
 
 void ClassTable::install_basic_classes() {
@@ -347,8 +351,6 @@ ostream& ClassTable::semant_error()
     return error_stream;
 }
 
-
-
 /*   This is the entry point to the semantic checker.
 
      Your checker should do the following two things:
@@ -363,13 +365,57 @@ ostream& ClassTable::semant_error()
      to build mycoolc.
  */
 
+/*
+ * Look up the method <method_name> in the class <class_name> and its parents
+ * return a Feature containing the method data
+ */
+Feature ClassTable::lookup_method(Symbol class_name, Symbol method_name)
+{
+
+}
+
+/*
+ * Look up the method <method_name> in the class <class_name>
+ * return a Feature containing the method data
+ */
+Feature ClassTable::lookup_static_method(Symbol class_name, Symbol method_name)
+{
+
+}
+
+/*
+ * Look up the attribute <attr_name> in the class <class_name> and its parents
+ * return a Feature containing the attribute data
+ */
+Feature ClassTable::lookup_attr(Symbol class_name, Symbol attr_name)
+{
+
+}
+
+/*
+ * Check if the method <method_name> has a matching signature if it overrides
+ * a parent class's method
+ * return a true if it's valid and false otherwise
+ */
+bool ClassTable::validate_method(Symbol class_name, Symbol method_name)
+{
+}
+
+/*
+ * Check if the attribute <attr_name> is unique along the inheritance path
+ * return a true if it's valid and false otherwise
+ */
+bool ClassTable::validate_attr(Symbol class_name, Symbol attr_name)
+{
+
+}
+
 void program_class::semant()
 {
     initialize_constants();
 
     /* ClassTable constructor may do some semantic analysis */
-    ClassTable *classtable = new ClassTable(classes);
-    //printf("Heyyy: %d\n", classtable->errors());
+    classtable = new ClassTable(classes);
 
     /* some semantic analysis code may go here */
 
@@ -377,4 +423,55 @@ void program_class::semant()
 	cerr << "Compilation halted due to static semantic errors." << endl;
 	exit(1);
     }
+
+    /* Semantic analysis for each class */
+    for (int i = 0; classes->more(i); i = classes->next(i)) {
+        classes->nth(i)->semant();
+    }
+}
+
+/*
+ * Extra definitions for the Class_ phylum
+ */
+
+Symbol class__class::get_name()
+{
+    return name;
+}
+
+Symbol class__class::get_parent()
+{
+    return parent;
+}
+
+Features class__class::get_features() {
+    return features;
+}
+
+void class__class::semant()
+{
+
+}
+
+/*
+ * Extra definitions for Feature phylum
+ */
+
+int method_class::get_feature_type()
+{
+    return METHOD;
+}
+
+int attr_class::get_feature_type()
+{
+    return ATTR;
+}
+
+/*
+ * Extra definitions for Formal phylum
+ */
+
+Symbol formal_class::get_type()
+{
+    return type_decl;
 }

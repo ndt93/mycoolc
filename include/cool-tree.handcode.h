@@ -8,7 +8,12 @@
 #include "tree.h"
 #include "cool.h"
 #include "stringtab.h"
+
 #define yylineno curr_lineno;
+
+#define ATTR 0
+#define METHOD 1
+
 extern int yylineno;
 
 inline Boolean copy_Boolean(Boolean b) {return b; }
@@ -56,33 +61,45 @@ void semant();
 virtual Symbol get_filename() = 0;              \
 virtual void dump_with_types(ostream&,int) = 0; \
 virtual Symbol get_name() = 0;                  \
-virtual Symbol get_parent() = 0;
+virtual Symbol get_parent() = 0;                \
+virtual Features get_features() = 0;            \
+virtual void semant() = 0;
 
 
 #define class__EXTRAS                               \
 Symbol get_filename() { return filename; }          \
 void dump_with_types(ostream&,int);                 \
 Symbol get_name();                                  \
-Symbol get_parent();
+Symbol get_parent();                                \
+Features get_features();                            \
+void semant();
 
 
 #define Feature_EXTRAS                                        \
-virtual void dump_with_types(ostream&,int) = 0;
+virtual void dump_with_types(ostream&,int) = 0;               \
+virtual int get_feature_type() = 0;
 
 
 #define Feature_SHARED_EXTRAS                                       \
 void dump_with_types(ostream&,int);
 
 
+#define attr_EXTRAS         \
+int get_feature_type();
 
+
+#define method_EXTRAS       \
+int get_feature_type();
 
 
 #define Formal_EXTRAS                              \
-virtual void dump_with_types(ostream&,int) = 0;
+virtual void dump_with_types(ostream&,int) = 0;    \
+virtual Symbol get_type() = 0;
 
 
 #define formal_EXTRAS                           \
-void dump_with_types(ostream&,int);
+void dump_with_types(ostream&,int);             \
+Symbol get_type();
 
 
 #define Case_EXTRAS                             \

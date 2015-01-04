@@ -38,6 +38,7 @@ private:
   bool validate_inheritance(); // Check if inheritance graph is valid
   bool has_cycle(bool*, bool*, int); // Detect cycle in inheritance graph
 
+  int get_class_index(Symbol class_name);
 public:
   ClassTable(Classes);
   ~ClassTable();
@@ -45,6 +46,17 @@ public:
   ostream& semant_error();
   ostream& semant_error(Class_ c);
   ostream& semant_error(Symbol filename, tree_node *t);
+
+  /* Methods for querying class attritutes and methods */
+  Feature lookup_method(Symbol class_name, Symbol method_name);
+  Feature lookup_static_method(Symbol class_name, Symbol method_name);
+  Feature lookup_attr(Symbol class_name, Symbol attr_name);
+  bool validate_method(Symbol class_name, Symbol method_name);
+  bool validate_attr(Symbol class_name, Symbol attr_name);
+
+  /* Methods for type ordering query */
+  bool is_subclass(Symbol subclass, Symbol superclass);
+  Symbol lub(Symbol class1, Symbol class2);
 };
 
 
