@@ -11,8 +11,8 @@
 
 #define yylineno curr_lineno;
 
-#define ATTR 0
-#define METHOD 1
+#define ATTR_FEATURE 0
+#define METHOD_FEATURE 1
 
 extern int yylineno;
 
@@ -75,21 +75,33 @@ Features get_features();                            \
 void semant();
 
 
-#define Feature_EXTRAS                                        \
-virtual void dump_with_types(ostream&,int) = 0;               \
-virtual int get_feature_type() = 0;
+#define Feature_EXTRAS                              \
+virtual void dump_with_types(ostream&,int) = 0;     \
+virtual int get_feature_type() = 0;                 \
+virtual Symbol get_name() = 0;                      \
+virtual Formals get_formals();                      \
+virtual Symbol get_return_type();                   \
+virtual Symbol get_type();                          \
+virtual void semant() = 0;
 
 
 #define Feature_SHARED_EXTRAS                                       \
 void dump_with_types(ostream&,int);
 
 
-#define attr_EXTRAS         \
-int get_feature_type();
+#define attr_EXTRAS           \
+int get_feature_type();       \
+Symbol get_name();            \
+Symbol get_type();            \
+void semant();
 
 
-#define method_EXTRAS       \
-int get_feature_type();
+#define method_EXTRAS         \
+int get_feature_type();       \
+Symbol get_name();            \
+Formals get_formals();        \
+Symbol get_return_type();     \
+void semant();
 
 
 #define Formal_EXTRAS                              \

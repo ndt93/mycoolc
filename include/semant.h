@@ -48,11 +48,10 @@ public:
   ostream& semant_error(Symbol filename, tree_node *t);
 
   /* Methods for querying class attritutes and methods */
-  Feature lookup_method(Symbol class_name, Symbol method_name);
+  Feature lookup_feature(Symbol class_name, Symbol feature_name, int);
   Feature lookup_static_method(Symbol class_name, Symbol method_name);
-  Feature lookup_attr(Symbol class_name, Symbol attr_name);
-  bool validate_method(Symbol class_name, Symbol method_name);
-  bool validate_attr(Symbol class_name, Symbol attr_name);
+  bool validate_method(Symbol class_name, Feature method);
+  bool validate_attr(Symbol class_name, Feature attr);
 
   /* Methods for type ordering query */
   bool is_subclass(Symbol subclass, Symbol superclass);

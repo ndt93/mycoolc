@@ -82,7 +82,7 @@ static void initialize_constants(void)
     val         = idtable.add_string("_val");
 }
 
-static SymbolTable<Symbol, Symbol> vars_env;
+static SymbolTable<Symbol, Entry> vars_env;
 static ClassTable* classtable;
 
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr)
@@ -351,6 +351,115 @@ ostream& ClassTable::semant_error()
     return error_stream;
 }
 
+/*
+ * Look up the method <method_name> in the class <class_name> and its parents
+ * return a Feature containing the method data
+ */
+Feature ClassTable::lookup_feature(Symbol class_name, Symbol feature_name,
+                                   int feature_type)
+{
+    int class_index = get_class_index(class_name);
+    Features features;
+    Feature rval;
+
+    while (class_index != NO_CLASS_INDEX) {
+        features = table[class_index].class_->get_features();
+
+        for (int i = 0; features->more(i); i = features->next(i)) {
+            rval = features->nth(i);
+            if (rval->get_feature_type() == feature_type &&
+                rval->get_name() == feature_name)
+                return rval;
+        }
+
+        class_index = table[class_index].parent;
+    }
+
+    return NULL;
+}
+
+/*
+ * Look up the method <method_name> in the class <class_name>
+ * return a Feature containing the method data
+ */
+Feature ClassTable::lookup_static_method(Symbol class_name, Symbol method_name)
+{
+    int class_index = get_class_index(class_name);
+    Features features = table[class_index].class_->get_features();
+    Feature rval;
+
+    for (int i = 0; features->more(i); i = features->next(i)) {
+        rval = features->nth(i);
+        if (rval->get_feature_type() == METHOD_FEATURE &&
+            rval->get_name() == method_name)
+            return rval;
+    }
+
+    return NULL;
+}
+
+/*
+ * Check if the method <method_name> has a matching signature if it overrides
+ * a parent class's method
+ * return a true if it's valid and false otherwise
+ */
+bool ClassTable::validate_method(Symbol class_name, Feature method)
+{
+    Class_ cur_class = table[get_class_index(class_name)].class_;
+    Feature p_feature = lookup_feature(cur_class->get_parent(),
+                                       method->get_name(), METHOD_FEATURE);
+
+    bool rval = true;
+
+    if (p_feature != NULL) {
+        if (p_feature->get_return_type() != method->get_return_type()) {
+            semant_error(cur_class->get_filename(), method) <<
+                "Return type of overriding method does not match parents'\n";
+            rval = false;
+        }
+
+        Formals p_formals = p_feature->get_formals();
+        Formals cur_formals = method->get_formals();
+
+        if (p_formals->len() != cur_formals->len()) {
+            semant_error(cur_class->get_filename(), method) <<
+                "Formal parameters list of overriding method does not match parents'\n";
+            rval = false;
+        } else {
+            for (int i = 0, j = 0;
+                 i = cur_formals->more(i), j = p_formals->more(j);
+                 i = cur_formals->next(i), j = p_formals->next(j)) {
+                if (cur_formals->nth(i)->get_type() !=
+                    p_formals->nth(j)->get_type()) {
+                    semant_error(cur_class->get_filename(), method) <<
+                        "Formal parameters list of overriding method does not match parents'\n";
+                    rval = false;
+                }
+            }
+        }
+    }
+
+    return rval;
+}
+
+/*
+ * Check if the attribute <attr_name> is unique along the inheritance path
+ * return a true if it's valid and false otherwise
+ */
+bool ClassTable::validate_attr(Symbol class_name, Feature attr)
+{
+    Class_ cur_class = table[get_class_index(class_name)].class_;
+    Feature p_feature = lookup_feature(cur_class->get_parent(),
+                                       attr->get_name(), ATTR_FEATURE);
+    if (p_feature != NULL) {
+        semant_error(cur_class->get_filename(), attr) <<
+           "Overriding of attributes in parents' classes is illegal\n";
+        return false;
+    }
+
+    return true;
+}
+
 /*   This is the entry point to the semantic checker.
 
      Your checker should do the following two things:
@@ -364,51 +473,6 @@ ostream& ClassTable::semant_error()
      errors. Part 2) can be done in a second stage, when you want
      to build mycoolc.
  */
-
-/*
- * Look up the method <method_name> in the class <class_name> and its parents
- * return a Feature containing the method data
- */
-Feature ClassTable::lookup_method(Symbol class_name, Symbol method_name)
-{
-
-}
-
-/*
- * Look up the method <method_name> in the class <class_name>
- * return a Feature containing the method data
- */
-Feature ClassTable::lookup_static_method(Symbol class_name, Symbol method_name)
-{
-
-}
-
-/*
- * Look up the attribute <attr_name> in the class <class_name> and its parents
- * return a Feature containing the attribute data
- */
-Feature ClassTable::lookup_attr(Symbol class_name, Symbol attr_name)
-{
-
-}
-
-/*
- * Check if the method <method_name> has a matching signature if it overrides
- * a parent class's method
- * return a true if it's valid and false otherwise
- */
-bool ClassTable::validate_method(Symbol class_name, Symbol method_name)
-{
-}
-
-/*
- * Check if the attribute <attr_name> is unique along the inheritance path
- * return a true if it's valid and false otherwise
- */
-bool ClassTable::validate_attr(Symbol class_name, Symbol attr_name)
-{
-
-}
 
 void program_class::semant()
 {
@@ -434,38 +498,68 @@ void program_class::semant()
  * Extra definitions for the Class_ phylum
  */
 
-Symbol class__class::get_name()
-{
-    return name;
-}
-
-Symbol class__class::get_parent()
-{
-    return parent;
-}
-
-Features class__class::get_features() {
-    return features;
-}
-
 void class__class::semant()
 {
+    vars_env.enterscope();
 
+    Feature cur_feature;
+
+    for (int i = 0; features->more(i); i = features->next(i)) {
+        cur_feature = features->nth(i);
+
+        if (cur_feature->get_feature_type() == METHOD_FEATURE) {
+            classtable->validate_method(name, cur_feature);
+        } else {
+            classtable->validate_attr(name, cur_feature);
+            vars_env.addid(cur_feature->get_name(), cur_feature->get_type());
+        }
+    }
+
+    for (int i = 0; features->more(i); i = features->next(i)) {
+        features->nth(i)->semant();
+    }
+
+    vars_env.exitscope();
 }
+
+Symbol class__class::get_name() { return name; }
+
+Symbol class__class::get_parent() { return parent; }
+
+Features class__class::get_features() { return features; }
 
 /*
  * Extra definitions for Feature phylum
  */
 
-int method_class::get_feature_type()
-{
-    return METHOD;
+void attr_class::semant() {
+
 }
 
-int attr_class::get_feature_type()
-{
-    return ATTR;
+void method_class:: semant() {
+
 }
+
+int method_class::get_feature_type() { return METHOD_FEATURE; }
+
+int attr_class::get_feature_type() { return ATTR_FEATURE; }
+
+Symbol method_class::get_name() { return name; }
+
+Symbol attr_class::get_name() { return name; }
+
+Formals Feature_class::get_formals() { return NULL; }
+
+Formals method_class::get_formals() { return formals; }
+
+Symbol Feature_class::get_return_type() { return NULL; }
+
+Symbol method_class::get_return_type() { return return_type; }
+
+Symbol Feature_class::get_type() { return NULL; }
+
+Symbol attr_class::get_type() { return type_decl; }
+
 
 /*
  * Extra definitions for Formal phylum
