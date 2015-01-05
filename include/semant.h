@@ -23,6 +23,7 @@ struct TableEntry {
 // information such as the inheritance graph.  You may use it or not as
 // you like: it is only here to provide a container for the supplied
 // methods.
+// ** All methods in ClassTable are not aware of the special SELF_TYPE type
 
 class ClassTable {
 private:
@@ -49,7 +50,7 @@ public:
 
   /* Methods for querying class attritutes and methods */
   Feature lookup_feature(Symbol class_name, Symbol feature_name, int);
-  Feature lookup_static_method(Symbol class_name, Symbol method_name);
+  void add_attrs_to_scope(Symbol class_name);
   bool validate_method(Symbol class_name, Feature method);
   bool validate_attr(Symbol class_name, Feature attr);
 

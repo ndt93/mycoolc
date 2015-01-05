@@ -106,24 +106,31 @@ void semant();
 
 #define Formal_EXTRAS                              \
 virtual void dump_with_types(ostream&,int) = 0;    \
-virtual Symbol get_type() = 0;
+virtual Symbol get_type() = 0;                     \
+virtual semant() = 0;
 
 
 #define formal_EXTRAS                           \
 void dump_with_types(ostream&,int);             \
-Symbol get_type();
+Symbol get_type();                              \
+void semant();
 
 
-#define Case_EXTRAS                             \
-virtual void dump_with_types(ostream& ,int) = 0;
+#define Case_EXTRAS                              \
+virtual void dump_with_types(ostream& ,int) = 0; \
+virtual Expression get_expr() = 0;               \
+virtual void semant() = 0;
 
 
-#define branch_EXTRAS                                   \
-void dump_with_types(ostream& ,int);
+#define branch_EXTRAS                       \
+void dump_with_types(ostream& ,int);        \
+Expression get_expr();                      \
+void semant();
 
 
 #define Expression_EXTRAS                    \
 Symbol type;                                 \
+Symbol self_type_class;                             \
 Symbol get_type() { return type; }           \
 Expression set_type(Symbol s) { type = s; return this; } \
 virtual void dump_with_types(ostream&,int) = 0;  \
