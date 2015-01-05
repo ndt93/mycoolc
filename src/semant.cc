@@ -84,6 +84,7 @@ static void initialize_constants(void)
 
 static SymbolTable<Symbol, Entry> vars_env;
 static ClassTable* classtable;
+static Symbol cur_filename;
 
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr)
 {
@@ -460,6 +461,21 @@ bool ClassTable::validate_attr(Symbol class_name, Feature attr)
     return true;
 }
 
+bool ClassTable::is_subclass(Symbol subclass, Symbol superclass)
+{
+    if (subclass == No_type) return true;
+
+    int subclass_index = get_class_index(subclass);
+    int superclass_index = get_class_index(superclass);
+
+    while (subclass_index != NO_CLASS_INDEX) {
+        if (subclass_index == superclass_index) return true;
+        subclass_index = table[subclass_index].parent;
+    }
+
+    return false;
+}
+
 /*   This is the entry point to the semantic checker.
 
      Your checker should do the following two things:
@@ -500,6 +516,7 @@ void program_class::semant()
 
 void class__class::semant()
 {
+    cur_filename = get_filename();
     vars_env.enterscope();
 
     Feature cur_feature;
@@ -534,6 +551,12 @@ Features class__class::get_features() { return features; }
 
 void attr_class::semant() {
     init->semant();
+
+    if (!classtable->is_subclass(init->get_type(), type_decl)) {
+        classtable->semant_error(cur_filename, this) <<
+            "Initial expression of type " << init->get_type()
+            << " is not a subclass of " << type_decl <<  "\n";
+    }
 }
 
 void method_class:: semant() {
@@ -579,98 +602,101 @@ Symbol formal_class::get_type()
  * Extra definitions for the Expression phylum
  */
 
-void no_expr_class::semant() {
-    set_type(No_type);
+void no_expr_class::semant()
+{    set_type(No_type);
 }
 
-void assign_class::semant() {
-
+void assign_class::semant()
+{
 }
 
-void static_dispatch_class::semant() {
-
+void static_dispatch_class::semant()
+{
 }
 
-void dispatch_class::semant() {
-
+void dispatch_class::semant()
+{
 }
 
-void cond_class::semant() {
-
+void cond_class::semant()
+{
 }
 
-void loop_class::semant() {
-
+void loop_class::semant()
+{
 }
 
-void typcase_class::semant() {
-
+void typcase_class::semant()
+{
 }
 
-void block_class::semant() {
-
+void block_class::semant()
+{
 }
 
-void let_class::semant() {
-
+void let_class::semant()
+{
 }
 
-void plus_class::semant() {
-
+void plus_class::semant()
+{
 }
 
-void sub_class::semant() {
-
+void sub_class::semant()
+{
 }
 
-void mul_class::semant() {
-
+void mul_class::semant()
+{
 }
 
-void divide_class::semant() {
-
+void divide_class::semant()
+{
 }
 
-void neg_class::semant() {
-
+void neg_class::semant()
+{
 }
 
-void lt_class::semant() {
-
+void lt_class::semant()
+{
 }
 
-void eq_class::semant() {
-
+void eq_class::semant()
+{
 }
 
-void leq_class::semant() {
-
+void leq_class::semant()
+{
 }
 
-void comp_class::semant() {
-
+void comp_class::semant()
+{
 }
 
-void int_const_class::semant() {
-
+void int_const_class::semant()
+{
+    set_type(Int);
 }
 
-void bool_const_class::semant() {
-
+void bool_const_class::semant()
+{
+    set_type(Bool);
 }
 
-void string_const_class::semant() {
-
+void string_const_class::semant()
+{
+    set_type(Str);
 }
 
-void new__class::semant() {
-
+void new__class::semant()
+{
 }
 
-void isvoid_class::semant() {
-
+void isvoid_class::semant()
+{
 }
 
-void object_class::semant() {
-
+void object_class::semant()
+{
 }
