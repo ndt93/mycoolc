@@ -641,6 +641,16 @@ void method_class:: semant() {
         formals->nth(i)->semant();
     }
 
+    expr->semant();
+    Symbol T_0 = expr->get_type();
+
+    if (!conform(T_0, expr->self_type_class,
+                 return_type, curr_class->get_name())) {
+        classtable->semant_error(cur_filename, this) <<
+            "Infered type from method body " << T_0
+            << " is not a subclass of " << return_type << "\n";
+    }
+
     vars_env.exitscope();
     selftype_env.exitscope();
 }
@@ -675,8 +685,14 @@ Symbol formal_class::get_type()
     return type_decl;
 }
 
-void semant() {
-
+void formal_class::semant() {
+    if (type_decl == SELF_TYPE) {
+        classtable->semant_error(cur_filename, this) <<
+            "Declared type of formal parameter cannot be SELF_TYPE\n";
+        vars_env.addid(name, No_type);
+    } else {
+        vars_env.addid(name, type_decl);
+    }
 }
 
 /*
@@ -769,9 +785,9 @@ void static_dispatch_class::semant()
         }
 
         if (M->get_return_type() == SELF_TYPE) {
-            set_type(M->get_return_type());
-        } else {
             SET_TYPE(T0, expr);
+        } else {
+            set_type(M->get_return_type());
         }
     }
 }
@@ -808,13 +824,26 @@ void dispatch_class::semant()
             }
         }
 
-        Symbol T = M->get_return_type()==SELF_TYPE ? T_0 : M->get_return_type();
-        set_type(T);
+        if (M->get_return_type() == SELF_TYPE) {
+            SET_TYPE(T0, expr);
+        } else {
+            set_type(M->get_return_type());
+        }
     }
 }
 
 void cond_class::semant()
 {
+    pred->semant();
+    then_exp->semant();
+    else_exp->semant();
+
+    if (pred->get_type() != Bool) {
+        classtable->semant_error(cur_filename, this) <<
+            "If expression's predicate must evaluate to type Bool\n";
+        set_type(No_type);
+        return;
+    }
 }
 
 void loop_class::semant()
