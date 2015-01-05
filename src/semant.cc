@@ -533,7 +533,7 @@ Features class__class::get_features() { return features; }
  */
 
 void attr_class::semant() {
-
+    init->semant();
 }
 
 void method_class:: semant() {
@@ -568,4 +568,109 @@ Symbol attr_class::get_type() { return type_decl; }
 Symbol formal_class::get_type()
 {
     return type_decl;
+}
+
+/*
+ * Extra definitions for the Case phylum
+ */
+
+
+/*
+ * Extra definitions for the Expression phylum
+ */
+
+void no_expr_class::semant() {
+    set_type(No_type);
+}
+
+void assign_class::semant() {
+
+}
+
+void static_dispatch_class::semant() {
+
+}
+
+void dispatch_class::semant() {
+
+}
+
+void cond_class::semant() {
+
+}
+
+void loop_class::semant() {
+
+}
+
+void typcase_class::semant() {
+
+}
+
+void block_class::semant() {
+
+}
+
+void let_class::semant() {
+
+}
+
+void plus_class::semant() {
+
+}
+
+void sub_class::semant() {
+
+}
+
+void mul_class::semant() {
+
+}
+
+void divide_class::semant() {
+
+}
+
+void neg_class::semant() {
+
+}
+
+void lt_class::semant() {
+
+}
+
+void eq_class::semant() {
+
+}
+
+void leq_class::semant() {
+
+}
+
+void comp_class::semant() {
+
+}
+
+void int_const_class::semant() {
+
+}
+
+void bool_const_class::semant() {
+
+}
+
+void string_const_class::semant() {
+
+}
+
+void new__class::semant() {
+
+}
+
+void isvoid_class::semant() {
+
+}
+
+void object_class::semant() {
+
 }

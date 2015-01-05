@@ -128,12 +128,89 @@ Symbol get_type() { return type; }           \
 Expression set_type(Symbol s) { type = s; return this; } \
 virtual void dump_with_types(ostream&,int) = 0;  \
 void dump_type(ostream&, int);               \
-Expression_class() { type = (Symbol) NULL; }
+Expression_class() { type = (Symbol) NULL; } \
+virtual bool is_no_expr() { return false; }  \
+virtual void semant() = 0;
 
 
 
 #define Expression_SHARED_EXTRAS           \
 void dump_with_types(ostream&,int);
 
+
+#define no_expr_EXTRAS      \
+bool is_no_expr() { return true; }  \
+void semant();
+
+/* Extra definitions for classes derived from Expression phylum */
+
+#define assign_EXTRAS   \
+void semant();
+
+#define static_dispatch_EXTRAS  \
+void semant();
+
+#define dispatch_EXTRAS     \
+void semant();
+
+#define cond_EXTRAS     \
+void semant();
+
+#define loop_EXTRAS     \
+void semant();
+
+#define typcase_EXTRAS  \
+void semant(); 
+
+#define block_EXTRAS    \
+void semant(); 
+
+#define let_EXTRAS  \
+void semant(); 
+
+#define plus_EXTRAS     \
+void semant(); 
+
+#define sub_EXTRAS   \
+void semant(); 
+
+#define mul_EXTRAS  \
+void semant(); 
+
+#define divide_EXTRAS   \
+void semant(); 
+
+#define neg_EXTRAS  \
+void semant(); 
+
+#define lt_EXTRAS   \
+void semant(); 
+
+#define eq_EXTRAS   \
+void semant(); 
+
+#define leq_EXTRAS  \
+void semant(); 
+
+#define comp_EXTRAS     \
+void semant(); 
+
+#define int_const_EXTRAS    \
+void semant();
+
+#define bool_const_EXTRAS   \
+void semant();
+
+#define string_const_EXTRAS     \
+void semant();
+
+#define new__EXTRAS     \
+void semant();
+
+#define isvoid_EXTRAS   \
+void semant();
+
+#define object_EXTRAS   \
+void semant();
 
 #endif
