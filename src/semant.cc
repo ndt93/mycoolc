@@ -8,13 +8,6 @@
 #define NO_CLASS_INDEX -1
 #define NUM_BASIC_CLASSES 5
 
-#define GET_SELFTYPE(id) ((id) == SELF_TYPE ? selftype_env.lookup((id)) : NULL)
-#define SET_TYPE(type, expr) \
-    do { \
-        set_type((type)); \
-        if ((type) == SELF_TYPE) self_type_class = (expr)->self_type_class; \
-    } while (false); \
-
 extern int semant_debug;
 extern char *curr_filename;
 
@@ -90,10 +83,8 @@ static void initialize_constants(void)
 }
 
 static SymbolTable<Symbol, Entry> vars_env;
-/* Used to lookup the class of a SELF_TYPE id */
-static SymbolTable<Symbol, Entry> selftype_env;
 static ClassTable* classtable;
-static Class_ curr_class;
+static Symbol curr_class;
 static Symbol cur_filename;
 
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr)
@@ -398,37 +389,6 @@ Feature ClassTable::lookup_feature(Symbol class_name, Symbol feature_name,
 }
 
 /*
- * Look up the method <method_name> in the class <class_name>
- * return a Feature containing the method data
- */
-void ClassTable::add_attrs_to_scope(Symbol class_name)
-{
-    int class_index = get_class_index(class_name);
-    if (class_index == NO_CLASS_INDEX) return;
-
-    while (class_index != NO_CLASS_INDEX) {
-        Features features = table[class_index].class_->get_features();
-        Feature cur_feature;
-
-        for (int i = 0; features->more(i); i = features->next(i)) {
-            cur_feature = features->nth(i);
-            if (cur_feature->get_feature_type() == ATTR_FEATURE) {
-                vars_env.addid(cur_feature->get_name(),
-                               cur_feature->get_type());
-                if (cur_feature->get_type() == SELF_TYPE) {
-                    selftype_env.addid(cur_feature->get_name(), class_name);
-                }
-            }
-        }
-
-        class_index = table[class_index].parent;
-    }
-
-    vars_env.addid(self, SELF_TYPE);
-    selftype_env.addid(self, class_name);
-}
-
-/*
  * Check if the method <method_name> has a matching signature if it overrides
  * a parent class's method
  * return a true if it's valid and false otherwise
@@ -492,17 +452,19 @@ bool ClassTable::validate_attr(Symbol class_name, Feature attr)
 
 bool ClassTable::is_subclass(Symbol subclass, Symbol superclass)
 {
-    if (subclass == SELF_TYPE || superclass == SELF_TYPE) {
-        printf("Fatal: SELF_TYPE subclass should not be handled here!\n");
-        exit(1);
-    }
-
     if (subclass == NULL || superclass == NULL) {
         if (semant_debug) { printf("NULL class!"); }
         return false;
     }
 
+    if (subclass == SELF_TYPE && superclass == SELF_TYPE) {
+        return true;
+    }
+
     if (subclass == No_type) return true;
+
+    if (superclass == SELF_TYPE) return false;
+    if (subclass == SELF_TYPE) subclass = curr_class;
 
     int subclass_index = get_class_index(subclass);
     int superclass_index = get_class_index(superclass);
@@ -518,29 +480,18 @@ bool ClassTable::is_subclass(Symbol subclass, Symbol superclass)
 /*
  * Helper functions
  */
+Symbol lookup_id(Symbol id) {
+    Symbol id_t = vars_env.lookup(id);
 
-bool conform(Symbol subtype, Symbol sub_selftype,
-             Symbol supertype, Symbol super_selftype)
-{
-    if (subtype == No_type) return true;
+    if (id_t == NULL) {
+        Feature f = classtable->lookup_feature(curr_class, id, ATTR_FEATURE);
 
-    if (subtype == SELF_TYPE && supertype == SELF_TYPE) {
-        if (sub_selftype == NULL || super_selftype == NULL) {
-            printf("Fatal: SELF_TYPE class not assigned somewhere\n");
-            exit(1);
-        }
-
-        if (sub_selftype == super_selftype) {
-            return true;
-        } else {
-            return false;
-        }
-    } else if (subtype != SELF_TYPE && supertype != SELF_TYPE) {
-        return classtable->is_subclass(subtype, supertype);
-    } else if (supertype == SELF_TYPE) {
-        return false;
+        if (f == NULL)
+            return NULL;
+        else
+            return f->get_type();
     } else {
-        return classtable->is_subclass(sub_selftype, supertype);
+        return id_t;
     }
 }
 
@@ -585,10 +536,9 @@ void program_class::semant()
 void class__class::semant()
 {
     cur_filename = get_filename();
-    curr_class = this;
+    curr_class = name;
 
     vars_env.enterscope();
-    selftype_env.enterscope();
 
     Feature cur_feature;
 
@@ -601,14 +551,12 @@ void class__class::semant()
             classtable->validate_attr(name, cur_feature);
         }
     }
-
-    classtable->add_attrs_to_scope(name);
+    vars_env.addid(self, SELF_TYPE);
 
     for (int i = 0; features->more(i); i = features->next(i)) {
         features->nth(i)->semant();
     }
 
-    selftype_env.exitscope();
     vars_env.exitscope();
 }
 
@@ -625,8 +573,7 @@ Features class__class::get_features() { return features; }
 void attr_class::semant() {
     init->semant();
 
-    if (!conform(init->get_type(), init->self_type_class,
-                 type_decl, selftype_env.lookup(name))) {
+    if (!classtable->is_subclass(init->get_type(), type_decl)) {
         classtable->semant_error(cur_filename, this) <<
             "Initial expression of type " << init->get_type()
             << " is not a subclass of " << type_decl << "\n";
@@ -635,7 +582,6 @@ void attr_class::semant() {
 
 void method_class:: semant() {
     vars_env.enterscope();
-    selftype_env.enterscope();
 
     for (int i = 0; formals->more(i); i = formals->next(i)) {
         formals->nth(i)->semant();
@@ -644,15 +590,13 @@ void method_class:: semant() {
     expr->semant();
     Symbol T_0 = expr->get_type();
 
-    if (!conform(T_0, expr->self_type_class,
-                 return_type, curr_class->get_name())) {
+    if (!classtable->is_subclass(T_0, return_type)) {
         classtable->semant_error(cur_filename, this) <<
             "Infered type from method body " << T_0
             << " is not a subclass of " << return_type << "\n";
     }
 
     vars_env.exitscope();
-    selftype_env.exitscope();
 }
 
 int method_class::get_feature_type() { return METHOD_FEATURE; }
@@ -721,12 +665,11 @@ void assign_class::semant()
     expr->semant();
 
     Symbol expr_t = expr->get_type();
-    Symbol id_type = vars_env.lookup(name);
+    Symbol id_type = lookup_id(name);
 
     if (id_type != NULL) {
-        if (conform(expr_t, expr->self_type_class,
-                    id_type, GET_SELFTYPE(name))) {
-            SET_TYPE(expr_t, expr);
+        if (classtable->is_subclass(expr_t, id_type)) {
+            set_type(expr_t);
         } else {
             classtable->semant_error(cur_filename, this) <<
                 expr_t << " is not a subclass of " << id_type << "\n";
@@ -755,7 +698,7 @@ void static_dispatch_class::semant()
 
     Symbol T0 = expr->get_type();
 
-    if (!conform(T0, expr->self_type_class, type_name, NULL)) {
+    if (!classtable->is_subclass(T0, type_name)) {
         classtable->semant_error(cur_filename, this) <<
             "Expression's type " << T0 << " is not a subclass of type name "
             << type_name << "\n";
@@ -774,8 +717,9 @@ void static_dispatch_class::semant()
         for (int i = 0, j = 0; actual->more(i), formals->more(j);
              i = actual->next(i), j = formals->next(j)) {
             Expression cur_expr = actual->nth(i);
-            if (!conform(cur_expr->get_type(), cur_expr->self_type_class,
-                         formals->nth(i)->get_type(), NULL)) {
+
+            if (!classtable->is_subclass(cur_expr->get_type(),
+                                         formals->nth(i)->get_type())) {
                 classtable->semant_error(cur_filename, this) <<
                     "Argument's type at " << i + 1 << " is not a subclass of "
                     << formals->nth(i)->get_type() << "\n";
@@ -785,7 +729,7 @@ void static_dispatch_class::semant()
         }
 
         if (M->get_return_type() == SELF_TYPE) {
-            SET_TYPE(T0, expr);
+            set_type(T0);
         } else {
             set_type(M->get_return_type());
         }
@@ -801,7 +745,7 @@ void dispatch_class::semant()
     }
 
     Symbol T0 = expr->get_type();
-    Symbol T_0 = T0 == SELF_TYPE ? expr->self_type_class : T0;
+    Symbol T_0 = T0 == SELF_TYPE ? curr_class : T0;
 
     Feature M = classtable->lookup_feature(T_0, name, METHOD_FEATURE);
     if (M == NULL) {
@@ -814,8 +758,9 @@ void dispatch_class::semant()
         for (int i = 0, j = 0; actual->more(i), formals->more(j);
              i = actual->next(i), j = formals->next(j)) {
             Expression cur_expr = actual->nth(i);
-            if (!conform(cur_expr->get_type(), cur_expr->self_type_class,
-                         formals->nth(i)->get_type(), NULL)) {
+
+            if (!classtable->is_subclass(cur_expr->get_type(),
+                                         formals->nth(i)->get_type())) {
                 classtable->semant_error(cur_filename, this) <<
                     "Argument's type at " << i + 1 << " is not a subclass of "
                     << formals->nth(i)->get_type() << "\n";
@@ -825,7 +770,7 @@ void dispatch_class::semant()
         }
 
         if (M->get_return_type() == SELF_TYPE) {
-            SET_TYPE(T0, expr);
+            set_type(T0);
         } else {
             set_type(M->get_return_type());
         }
@@ -916,10 +861,6 @@ void string_const_class::semant()
 void new__class::semant()
 {
     set_type(type_name);
-
-    if (type_name == SELF_TYPE) {
-        self_type_class = curr_class->get_name();
-    }
 }
 
 void isvoid_class::semant()
@@ -928,7 +869,7 @@ void isvoid_class::semant()
 
 void object_class::semant()
 {
-    Symbol object_t = vars_env.lookup(name);
+    Symbol object_t = lookup_id(name);
 
     if (object_t == NULL) {
         classtable->semant_error(cur_filename, this) <<
@@ -936,8 +877,5 @@ void object_class::semant()
         set_type(No_type);
     } else {
         set_type(object_t);
-        if (object_t == SELF_TYPE) {
-            self_type_class = selftype_env.lookup(name);
-        }
     }
 }

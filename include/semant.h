@@ -50,7 +50,6 @@ public:
 
   /* Methods for querying class attritutes and methods */
   Feature lookup_feature(Symbol class_name, Symbol feature_name, int);
-  void add_attrs_to_scope(Symbol class_name);
   bool validate_method(Symbol class_name, Feature method);
   bool validate_attr(Symbol class_name, Feature attr);
 

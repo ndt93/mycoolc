@@ -130,7 +130,6 @@ void semant();
 
 #define Expression_EXTRAS                    \
 Symbol type;                                 \
-Symbol self_type_class;                             \
 Symbol get_type() { return type; }           \
 Expression set_type(Symbol s) { type = s; return this; } \
 virtual void dump_with_types(ostream&,int) = 0;  \
