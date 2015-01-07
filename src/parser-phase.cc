@@ -22,7 +22,7 @@
 //
 // These globals keep everything working.
 //
-FILE *token_file = stdin;		// we read from this file
+FILE *token_file = stdin;	 // we read from this file
 extern Classes parse_results;	 // list of classes; used for multiple files 
 extern Program ast_root;	 // the AST produced by the parse
 

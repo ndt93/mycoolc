@@ -38,8 +38,17 @@ cool-parse.cc cool-parse.h: ${SRCDIR}/cool.y
 	bison ${BFLAGS} ${SRCDIR}/cool.y
 	mv -f cool.tab.c ${SRCDIR}/cool-parse.cc
 
-parser: ${OBJS1:%.o=${SRCDIR}/%.o}
-	${CC} ${CFLAGS} ${OBJS1} ${LIB} -o parser
+parser: ${OBJS1:%.o=${SRCDIR}/%.o} src/semant.o
+	${CC} ${CFLAGS} ${OBJS1} semant.o ${LIB} -o parser
 
 clean:
 	rm *.o
+
+# Semantic Analyzer
+CSRC2= semant-phase.cc handle_flags.cc cool-lex.cc cool-parse.cc utilities.cc \
+       stringtab.cc dumptype.cc tree.cc cool-tree.cc
+CFIL2= semant.cc ${CSRC2}
+OBJS2= ${CFIL2:.cc=.o}
+
+semant: ${OBJS2:%.o=${SRCDIR}/%.o}
+	${CC} ${CFLAGS} ${OBJS2} ${LIB} -o semant
