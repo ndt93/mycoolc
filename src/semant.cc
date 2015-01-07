@@ -492,9 +492,10 @@ Symbol ClassTable::lub(Symbol class1, Symbol class2)
 
     if (class2 == SELF_TYPE) class2 = curr_class;
 
+
     int class1_index = get_class_index(class1);
     int class2_index = get_class_index(class2);
-    int i = table[class1_index].parent, j = table[class2_index].parent;
+    int i = class1_index, j = class2_index;
 
     if (class1_index == NO_CLASS_INDEX || class2_index == NO_CLASS_INDEX)
         return NULL;
@@ -519,7 +520,11 @@ Symbol ClassTable::lub(Symbol class1, Symbol class2)
         i--; j--;
     }
 
-    return table[parents1[i+1]].class_->get_name();
+    int ancestor_index = parents1[i+1];
+    delete parents1;
+    delete parents2;
+
+    return table[ancestor_index].class_->get_name();
 }
 
 /*
@@ -689,12 +694,19 @@ void formal_class::semant() {
  */
 
 void branch_class::semant() {
+    vars_env.enterscope();
+    vars_env.addid(name, type_decl);
 
+    expr->semant();
+
+    vars_env.exitscope();
 }
 
-Expression branch_class::get_expr() {
-    return expr;
-}
+Expression branch_class::get_expr() { return expr; }
+
+Symbol branch_class::get_name() { return name; }
+
+Symbol branch_class::get_type() { return type_decl; }
 
 /*
  * Extra definitions for the Expression phylum
@@ -852,6 +864,35 @@ void loop_class::semant()
 
 void typcase_class::semant()
 {
+    expr->semant();
+
+    Symbol* cases_types = new Symbol[cases->len()];
+    int num_cases = 0;
+
+    for (int i = 0; cases->more(i); i = cases->next(i), num_cases++) {
+        cases->nth(i)->semant();
+        cases_types[num_cases] = cases->nth(i)->get_type();
+    }
+
+    for (int i = 0; i < num_cases; i++) {
+        for (int j = i + 1; j < num_cases; j++) {
+            if (cases_types[i] == cases_types[j]) {
+                classtable->semant_error(cur_filename, this) <<
+                    "Repeated types " << cases_types[i] <<
+                    " in case's branches\n";
+                set_type(No_type);
+                return;
+            }
+        }
+    }
+
+    Symbol ancestor = No_type;
+
+    for (int i = 0; i < num_cases; i++) {
+        ancestor = classtable->lub(ancestor, cases_types[i]);
+    }
+
+    set_type(ancestor);
 }
 
 void block_class::semant()
@@ -869,6 +910,22 @@ void block_class::semant()
 void let_class::semant()
 {
    init->semant();
+
+   vars_env.enterscope();
+   vars_env.addid(identifier, type_decl);
+
+   body->semant();
+
+   if (!classtable->is_subclass(init->get_type(), type_decl)) {
+       classtable->semant_error(cur_filename, this) <<
+           "Initial expression of type " << init->get_type() <<
+           " is not a subclass of declared type " << type_decl << "\n";
+       set_type(No_type);
+   } else {
+       set_type(body->get_type());
+   }
+
+   vars_env.exitscope();
 }
 
 void plus_class::semant()
