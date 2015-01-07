@@ -107,12 +107,14 @@ void semant();
 #define Formal_EXTRAS                              \
 virtual void dump_with_types(ostream&,int) = 0;    \
 virtual Symbol get_type() = 0;                     \
+virtual Symbol get_name() = 0;                     \
 virtual void semant() = 0;
 
 
 #define formal_EXTRAS                           \
 void dump_with_types(ostream&,int);             \
 Symbol get_type();                              \
+Symbol get_name();                              \
 void semant();
 
 

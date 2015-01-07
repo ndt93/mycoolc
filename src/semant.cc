@@ -128,8 +128,9 @@ bool ClassTable::validate_names() {
         for (int j = i + 1; j < num_classes; j++) {
             if (table[i].class_->get_name() == table[j].class_->get_name()) {
                 if (i < NUM_BASIC_CLASSES)
-                    semant_error(table[i].class_)
-                        << "Cannot redefine built-in classes\n";
+                    semant_error(table[j].class_)
+                        << "Redefinition of basic class " <<
+                        table[i].class_->get_name() << ".\n";
                 else
                     semant_error(table[i].class_) << "Repeated class name\n";
                 return false;
@@ -408,6 +409,7 @@ bool ClassTable::validate_method(Symbol class_name, Feature method)
             rval = false;
         }
 
+
         Formals p_formals = p_feature->get_formals();
         Formals cur_formals = method->get_formals();
 
@@ -417,7 +419,7 @@ bool ClassTable::validate_method(Symbol class_name, Feature method)
             rval = false;
         } else {
             for (int i = 0, j = 0;
-                 i = cur_formals->more(i), j = p_formals->more(j);
+                 cur_formals->more(i) && p_formals->more(j);
                  i = cur_formals->next(i), j = p_formals->next(j)) {
                 if (cur_formals->nth(i)->get_type() !=
                     p_formals->nth(j)->get_type()) {
@@ -438,6 +440,12 @@ bool ClassTable::validate_method(Symbol class_name, Feature method)
  */
 bool ClassTable::validate_attr(Symbol class_name, Feature attr)
 {
+    if (attr->get_name() == self) {
+        semant_error(cur_filename, attr) <<
+           "'self' cannot be the name of an attribute\n";
+        return false;
+    }
+
     Class_ cur_class = table[get_class_index(class_name)].class_;
     Feature p_feature = lookup_feature(cur_class->get_parent(),
                                        attr->get_name(), ATTR_FEATURE);
@@ -561,12 +569,13 @@ Symbol lookup_id(Symbol id) {
 
 void program_class::semant()
 {
+    if (semant_debug)
+        cout << "Start static analyzer" << endl;
+
     initialize_constants();
 
     /* ClassTable constructor may do some semantic analysis */
     classtable = new ClassTable(classes);
-
-    /* some semantic analysis code may go here */
 
     if (classtable->errors()) {
 	cerr << "Compilation halted due to static semantic errors." << endl;
@@ -574,9 +583,22 @@ void program_class::semant()
     }
 
     /* Semantic analysis for each class */
+    bool has_main = false;
+
     for (int i = 0; classes->more(i); i = classes->next(i)) {
+        if (classes->nth(i)->get_name() == Main)
+            has_main = true;
         classes->nth(i)->semant();
     }
+
+    if (!has_main)
+        classtable->semant_error() << "Class Main is not defined.\n";
+
+    if (classtable->errors()) {
+	cerr << "Compilation halted due to static semantic errors." << endl;
+	exit(1);
+    }
+
 }
 
 /*
@@ -585,12 +607,23 @@ void program_class::semant()
 
 void class__class::semant()
 {
+    if (semant_debug)
+        cout << "Analyzing class " << name << endl;
+
     cur_filename = get_filename();
     curr_class = name;
+
+    if (parent == Bool || parent == Str || parent == Int) {
+        classtable->semant_error(cur_filename, this) <<
+            "Class " << name << " cannot inherit class " << parent << ".\n";
+    }
 
     vars_env.enterscope();
 
     Feature cur_feature;
+
+    if (semant_debug)
+        cout << "Validating attribute names and method signatures..." << endl;
 
     for (int i = 0; features->more(i); i = features->next(i)) {
         cur_feature = features->nth(i);
@@ -601,6 +634,10 @@ void class__class::semant()
             classtable->validate_attr(name, cur_feature);
         }
     }
+
+    if (semant_debug)
+        cout << "Attribute names and Method signatures are ok" << endl;
+
     vars_env.addid(self, SELF_TYPE);
 
     for (int i = 0; features->more(i); i = features->next(i)) {
@@ -633,8 +670,20 @@ void attr_class::semant() {
 void method_class:: semant() {
     vars_env.enterscope();
 
+    Formal cur_formal;
+
     for (int i = 0; formals->more(i); i = formals->next(i)) {
-        formals->nth(i)->semant();
+        cur_formal = formals->nth(i);
+        cur_formal->semant();
+
+        for (int j = formals->next(i); formals->more(j); j = formals->next(j)) {
+            if (cur_formal->get_name() == formals->nth(j)->get_name()) {
+                classtable->semant_error(cur_filename, this) <<
+                    "Formal parameter " << cur_formal->get_name() <<
+                    " is multiply defined.\n";
+                break;
+            }
+        }
     }
 
     expr->semant();
@@ -674,20 +723,23 @@ Symbol attr_class::get_type() { return type_decl; }
  * Extra definitions for Formal phylum
  */
 
-Symbol formal_class::get_type()
-{
-    return type_decl;
-}
-
 void formal_class::semant() {
     if (type_decl == SELF_TYPE) {
         classtable->semant_error(cur_filename, this) <<
             "Declared type of formal parameter cannot be SELF_TYPE\n";
         vars_env.addid(name, No_type);
+    } else if (name == self) {
+        classtable->semant_error(cur_filename, this) <<
+            "'self' cannot be the name of a formal parameter.\n";
+        vars_env.addid(name, No_type);
     } else {
         vars_env.addid(name, type_decl);
     }
 }
+
+Symbol formal_class::get_type() { return type_decl; }
+
+Symbol formal_class::get_name() { return name; }
 
 /*
  * Extra definitions for the Case phylum
@@ -720,6 +772,13 @@ void no_expr_class::semant()
 void assign_class::semant()
 {
     expr->semant();
+
+    if (name == self) {
+        classtable->semant_error(cur_filename, this) <<
+            "Cannot assign to 'self'.\n";
+        set_type(No_type);
+        return;
+    }
 
     Symbol expr_t = expr->get_type();
     Symbol id_type = lookup_id(name);
@@ -757,7 +816,8 @@ void static_dispatch_class::semant()
 
     if (!classtable->is_subclass(T0, type_name)) {
         classtable->semant_error(cur_filename, this) <<
-            "Expression's type " << T0 << " is not a subclass of type name "
+            "Expression type " << T0
+            << " does not conform to declared static dispatched type "
             << type_name << "\n";
         set_type(No_type);
         return;
@@ -877,11 +937,14 @@ void typcase_class::semant()
     expr->semant();
 
     Symbol* cases_types = new Symbol[cases->len()];
+    Symbol* cases_expr_types = new Symbol[cases->len()];
+
     int num_cases = 0;
 
     for (int i = 0; cases->more(i); i = cases->next(i), num_cases++) {
         cases->nth(i)->semant();
         cases_types[num_cases] = cases->nth(i)->get_type();
+        cases_expr_types[num_cases] = cases->nth(i)->get_expr()->get_type();
     }
 
     for (int i = 0; i < num_cases; i++) {
@@ -899,10 +962,13 @@ void typcase_class::semant()
     Symbol ancestor = No_type;
 
     for (int i = 0; i < num_cases; i++) {
-        ancestor = classtable->lub(ancestor, cases_types[i]);
+        ancestor = classtable->lub(ancestor, cases_expr_types[i]);
     }
 
     set_type(ancestor);
+
+    delete cases_types;
+    delete cases_expr_types;
 }
 
 void block_class::semant()
@@ -922,7 +988,13 @@ void let_class::semant()
    init->semant();
 
    vars_env.enterscope();
-   vars_env.addid(identifier, type_decl);
+
+   if (identifier == self) {
+       classtable->semant_error(cur_filename, this) <<
+           "'self' cannot be bound in a 'let' expression\n";
+   } else {
+       vars_env.addid(identifier, type_decl);
+   }
 
    body->semant();
 
