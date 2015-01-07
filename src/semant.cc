@@ -1023,6 +1023,24 @@ void lt_class::semant()
 
 void eq_class::semant()
 {
+    e1->semant();
+    e2->semant();
+
+    Symbol e1_t = e1->get_type();
+    Symbol e2_t = e2->get_type();
+
+    if (e1_t == Int || e2_t == Int || e1_t == Str || e2_t == Str ||
+        e1_t == Bool || e2_t == Bool) {
+        if (e1_t != e2_t) {
+            classtable->semant_error(cur_filename, this) <<
+                "Both expressions must have same primitive types\n";
+            set_type(No_type);
+        } else {
+            set_type(Bool);
+        }
+    } else {
+        set_type(Bool);
+    }
 }
 
 void leq_class::semant()
