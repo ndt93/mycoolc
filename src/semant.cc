@@ -478,6 +478,51 @@ bool ClassTable::is_subclass(Symbol subclass, Symbol superclass)
 }
 
 /*
+ * Find the closest common ancestor (least upper bound) of class1 and class 2
+ */
+Symbol ClassTable::lub(Symbol class1, Symbol class2)
+{
+    if (class1 == class2) return class1;
+
+    if (class1 == No_type) return class2;
+
+    if (class2 == No_type) return class1;
+
+    if (class1 == SELF_TYPE) class1 = curr_class;
+
+    if (class2 == SELF_TYPE) class2 = curr_class;
+
+    int class1_index = get_class_index(class1);
+    int class2_index = get_class_index(class2);
+    int i = table[class1_index].parent, j = table[class2_index].parent;
+
+    if (class1_index == NO_CLASS_INDEX || class2_index == NO_CLASS_INDEX)
+        return NULL;
+
+    int* parents1 = new int[num_classes];
+    int* parents2 = new int[num_classes];
+    int parents1_count = 0, parents2_count = 0;
+
+    while (i != NO_CLASS_INDEX) {
+        parents1[parents1_count++] = i;
+        i = table[i].parent;
+    }
+    while (j != NO_CLASS_INDEX) {
+        parents2[parents2_count++] = j;
+        j = table[j].parent;
+    }
+
+    i = parents1_count - 1;
+    j = parents2_count - 1;
+
+    while (i >= 0 && j >= 0 && parents1[i] == parents2[j]) {
+        i--; j--;
+    }
+
+    return table[parents1[i+1]].class_->get_name();
+}
+
+/*
  * Helper functions
  */
 Symbol lookup_id(Symbol id) {
@@ -789,6 +834,16 @@ void cond_class::semant()
         set_type(No_type);
         return;
     }
+
+    Symbol ancestor = classtable->lub(then_exp->get_type(),
+                                      else_exp->get_type());
+    if (ancestor == NULL) {
+        classtable->semant_error(cur_filename, this) <<
+            "Cannot find find common superclass\n";
+        set_type(No_type);
+    } else {
+        set_type(ancestor);
+    }
 }
 
 void loop_class::semant()
@@ -801,10 +856,19 @@ void typcase_class::semant()
 
 void block_class::semant()
 {
+    int last_index;
+
+    for (int i = 0; body->more(i); i = body->next(i)) {
+        body->nth(i)->semant();
+        last_index = i;
+    }
+
+    set_type(body->nth(last_index)->get_type());
 }
 
 void let_class::semant()
 {
+   init->semant();
 }
 
 void plus_class::semant()
