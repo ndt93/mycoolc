@@ -860,6 +860,16 @@ void cond_class::semant()
 
 void loop_class::semant()
 {
+    pred->semant();
+    body->semant();
+
+    if (pred->get_type() != Bool) {
+        classtable->semant_error(cur_filename, this) <<
+            "Loop predicate must have type Bool\n";
+        set_type(No_type);
+    } else {
+        set_type(Object);
+    }
 }
 
 void typcase_class::semant()
@@ -930,26 +940,85 @@ void let_class::semant()
 
 void plus_class::semant()
 {
+    e1->semant();
+    e2->semant();
+
+    if (e1->get_type() != Int || e2->get_type() != Int) {
+        classtable->semant_error(cur_filename, this) <<
+            "Both expressions must have type Int\n";
+        set_type(No_type);
+    } else {
+        set_type(Int);
+    }
 }
 
 void sub_class::semant()
 {
+    e1->semant();
+    e2->semant();
+
+    if (e1->get_type() != Int || e2->get_type() != Int) {
+        classtable->semant_error(cur_filename, this) <<
+            "Both expressions must have type Int\n";
+        set_type(No_type);
+    } else {
+        set_type(Int);
+    }
 }
 
 void mul_class::semant()
 {
+    e1->semant();
+    e2->semant();
+
+    if (e1->get_type() != Int || e2->get_type() != Int) {
+        classtable->semant_error(cur_filename, this) <<
+            "Both expressions must have type Int\n";
+        set_type(No_type);
+    } else {
+        set_type(Int);
+    }
 }
 
 void divide_class::semant()
 {
+    e1->semant();
+    e2->semant();
+
+    if (e1->get_type() != Int || e2->get_type() != Int) {
+        classtable->semant_error(cur_filename, this) <<
+            "Both expressions must have type Int\n";
+        set_type(No_type);
+    } else {
+        set_type(Int);
+    }
 }
 
 void neg_class::semant()
 {
+    e1->semant();
+
+    if (e1->get_type() != Int) {
+        classtable->semant_error(cur_filename, this) <<
+            "Expression must have type Int\n";
+        set_type(No_type);
+    } else {
+        set_type(Int);
+    }
 }
 
 void lt_class::semant()
 {
+    e1->semant();
+    e2->semant();
+
+    if (e1->get_type() != Int || e2->get_type() != Int) {
+        classtable->semant_error(cur_filename, this) <<
+            "Both expressions must have type Int\n";
+        set_type(No_type);
+    } else {
+        set_type(Bool);
+    }
 }
 
 void eq_class::semant()
@@ -958,10 +1027,29 @@ void eq_class::semant()
 
 void leq_class::semant()
 {
+    e1->semant();
+    e2->semant();
+
+    if (e1->get_type() != Int || e2->get_type() != Int) {
+        classtable->semant_error(cur_filename, this) <<
+            "Both expressions must have type Int\n";
+        set_type(No_type);
+    } else {
+        set_type(Bool);
+    }
 }
 
 void comp_class::semant()
 {
+    e1->semant();
+
+    if (e1->get_type() != Bool) {
+        classtable->semant_error(cur_filename, this) <<
+            "Expression must have type Bool\n";
+        set_type(No_type);
+    } else {
+        set_type(Bool);
+    }
 }
 
 void int_const_class::semant()
@@ -986,6 +1074,8 @@ void new__class::semant()
 
 void isvoid_class::semant()
 {
+    e1->semant();
+    set_type(Bool);
 }
 
 void object_class::semant()
