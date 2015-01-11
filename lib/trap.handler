@@ -261,8 +261,8 @@ ret:	lw $v0 s1
 #
 #  The code above this line is from spim.  Below this line are
 #  the MIPS assembly routines implementing the Cool runtime system.
-#  This code is Copyright (c) 1995,1996 The Regents of the University 
-#  of California. All rights reserved.  See copyright.h for 
+#  This code is Copyright (c) 1995,1996 The Regents of the University
+#  of California. All rights reserved.  See copyright.h for
 #  limitation of liability and disclaimer of warranty provisions.
 #
 
@@ -399,8 +399,8 @@ __start:
 equality_test:			# ops in $t1 $t2
 				# true in A0, false in A1
 				# assume $t1, $t2 are not equal
-	beq	$t1 $zero _eq_false # $t2 can't also be void   
-	beq     $t2 $zero _eq_false # $t1 can't also be void   
+	beq	$t1 $zero _eq_false # $t2 can't also be void
+	beq     $t2 $zero _eq_false # $t1 can't also be void
 	lw	$v0 obj_tag($t1)	# get tags
 	lw	$v1 obj_tag($t2)
 	bne	$v1 $v0 _eq_false	# compare tags
@@ -429,7 +429,7 @@ _eq_l1:
 	addiu	$t0 $t0 -1	# Decrement counter
 	bnez	$t0 _eq_l1
 	b	_eq_true		# end of strings
-		
+
 _eq_int:	# handles booleans and ints
 	lw	$v0,int_slot($t1)	# load values
 	lw	$v1,int_slot($t2)
@@ -445,12 +445,12 @@ _eq_false:
 #
 #      filename in $a0
 #      line number in $t1
-#  
+#
 #  Prints error message and exits.
 #  Called on dispatch to void.
 #
 	.globl	_dispatch_abort
-_dispatch_abort:		 
+_dispatch_abort:
         sw      $t1 0($sp)       # save line number
         addiu   $sp $sp -4
 	addiu   $a0 $a0 str_field # adjust to beginning of string
@@ -459,7 +459,7 @@ _dispatch_abort:
 	la      $a0 _colon_msg
 	li	$v0 4
 	syscall                  # print ":"
-	lw      $a0 4($sp)       # 
+	lw      $a0 4($sp)       #
 	li	$v0 1
 	syscall			 # print line number
 	li 	$v0 4
@@ -474,12 +474,12 @@ _dispatch_abort:
 #
 #      filename in $a0
 #      line number in $t1
-#  
+#
 #  Prints error message and exits.
 #  Called on case on void.
 #
 	.globl	_case_abort2
-_case_abort2:		 
+_case_abort2:
         sw      $t1 0($sp)       # save line number
         addiu   $sp $sp -4
 	addiu   $a0 $a0 str_field # adjust to beginning of string
@@ -488,7 +488,7 @@ _case_abort2:
 	la      $a0 _colon_msg
 	li	$v0 4
 	syscall                  # print ":"
-	lw      $a0 4($sp)       # 
+	lw      $a0 4($sp)       #
 	li	$v0 1
 	syscall			 # print line number
 	li 	$v0 4
@@ -496,7 +496,7 @@ _case_abort2:
 	syscall			 # print case-on-void message
 	li   	$v0 10
         syscall			 # exit
-	
+
 #
 #
 #  _case_abort
@@ -526,7 +526,7 @@ _case_abort:			# $a0 contains case expression obj.
 	syscall
 	li	$v0 10
 	syscall			# Exit
-	
+
 
 #
 # Copy method
@@ -647,7 +647,7 @@ Object.abort:
 
 #
 #
-# Object.type_name	
+# Object.type_name
 #
 #   	INPUT:	$a0 object who's class name is desired
 #	OUTPUT:	$a0 reference to class name string object
@@ -701,7 +701,7 @@ IO.out_int:
 	lw	$a0 8($sp)	# get arg
 	lw	$a0 int_slot($a0)	# Fetch int
 	li	$v0 1		# print_int
-	syscall	
+	syscall
 	lw	$a0 4($sp)	# return self
 	addiu	$sp $sp 8	# pop argument
 	jr	$ra
@@ -775,7 +775,7 @@ IO.in_string:
 
 _instr_ok:
 	li	$a1 str_maxsize			# largest string to read
-	move	$a0 $gp	
+	move	$a0 $gp
 	li	$v0, 8				# read string
 	syscall
 
@@ -1464,7 +1464,7 @@ _GenGC_Init:
 	and	$t1 $t1 $v0
 	blez	$t1 _GenGC_Init_error		# heap initially to small
 	sub	$gp $a2 $t1
-	sw	$gp GenGC_HDRL2($t0)		# save start of work area	
+	sw	$gp GenGC_HDRL2($t0)		# save start of work area
 	sw	$a2 GenGC_HDRL3($t0)		# save end of work area
 	move	$s7 $a2				# set limit pointer
 	sw	$0 GenGC_HDRMAJOR0($t0)		# clear histories
@@ -1509,7 +1509,7 @@ _GenGC_Init_error:
 #     addiu   $a0 $sp 4
 #   to
 #     addiu   $a0 $sp 0     (i.e. move $a0 $sp)
-#   Just in case this isn't exactly right, I've also put 0 into that 
+#   Just in case this isn't exactly right, I've also put 0 into that
 #   last spot so it will definitely be safely ignored.
 #
 
@@ -1540,7 +1540,7 @@ _gc_check:
 _gc_ok:
 	jr	$ra
 
-_gc_abort:		 
+_gc_abort:
 	la      $a0 _gc_abort_msg
 	li	$v0 4
 	syscall                  # print gc message
