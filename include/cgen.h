@@ -46,18 +46,27 @@ public:
    CgenClassTable(Classes, ostream& str);
    void code();
    CgenNodeP root();
-};
 
+   StringEntryP empty_string;
+   IntEntryP zero;
+};
 
 class CgenNode : public class__class {
 private: 
    CgenNodeP parentnd;                        // Parent of class
    List<CgenNode> *children;                  // Children of class
    Basicness basic_status;                    // `Basic' if class is basic
-                                              // `NotBasic' otherwise
+   CgenClassTableP classtable;
 
+protected:
+   int class_tag;
+   
+   int num_attr;
+   SymbolTable<Symbol, int> attr_offset;
+   SymbolTable<int, Entry> offset_type;
 public:
    CgenNode(Class_ c,
+            int tag,
             Basicness bstatus,
             CgenClassTableP class_table);
 
@@ -66,6 +75,9 @@ public:
    void set_parentnd(CgenNodeP p);
    CgenNodeP get_parentnd() { return parentnd; }
    int basic() { return (basic_status == Basic); }
+
+   /* Methods for generating code for this class */
+   void generate_proto(ostream& s); // Generate prototype object
 };
 
 class BoolConst 
@@ -77,4 +89,3 @@ class BoolConst
   void code_def(ostream&, int boolclasstag);
   void code_ref(ostream&) const;
 };
-

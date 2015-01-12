@@ -11,6 +11,9 @@
 #define yylineno curr_lineno;
 extern int yylineno;
 
+#define ATTR_FEATURE 0
+#define METHOD_FEATURE 1
+
 inline Boolean copy_Boolean(Boolean b) {return b; }
 inline void assert_Boolean(Boolean) {}
 inline void dump_Boolean(ostream& stream, int padding, Boolean b)
@@ -46,34 +49,52 @@ typedef Cases_class *Cases;
 
 #define Program_EXTRAS                          \
 virtual void cgen(ostream&) = 0;		\
-virtual void dump_with_types(ostream&, int) = 0; 
+virtual void dump_with_types(ostream&, int) = 0;
 
 
 
 #define program_EXTRAS                          \
 void cgen(ostream&);     			\
-void dump_with_types(ostream&, int);            
+void dump_with_types(ostream&, int);
 
 #define Class__EXTRAS                   \
 virtual Symbol get_name() = 0;  	\
 virtual Symbol get_parent() = 0;    	\
 virtual Symbol get_filename() = 0;      \
-virtual void dump_with_types(ostream&,int) = 0; 
+virtual void dump_with_types(ostream&,int) = 0;
 
 
 #define class__EXTRAS                                  \
 Symbol get_name()   { return name; }		       \
 Symbol get_parent() { return parent; }     	       \
 Symbol get_filename() { return filename; }             \
-void dump_with_types(ostream&,int);                    
+void dump_with_types(ostream&,int);
 
 
-#define Feature_EXTRAS                                        \
-virtual void dump_with_types(ostream&,int) = 0; 
+#define Feature_EXTRAS                              \
+virtual void dump_with_types(ostream&,int) = 0;     \
+virtual int get_feature_type() = 0;                 \
+virtual Symbol get_name() = 0;                      \
+virtual Formals get_formals() { return NULL; }                     \
+virtual Symbol get_return_type() { return NULL; }                  \
+virtual Symbol get_type() { return NULL; }
 
 
 #define Feature_SHARED_EXTRAS                                       \
-void dump_with_types(ostream&,int);    
+void dump_with_types(ostream&,int);
+
+
+#define attr_EXTRAS           \
+int get_feature_type() { return ATTR_FEATURE; }     \
+Symbol get_name() { return name; };                 \
+Symbol get_type() { return type_decl; };
+
+
+#define method_EXTRAS         \
+int get_feature_type() { return METHOD_FEATURE; }       \
+Symbol get_name() { return name; }                      \
+Formals get_formals() { return formals; }               \
+Symbol get_return_type() { return return_type; }
 
 
 #define Formal_EXTRAS                              \
@@ -103,7 +124,7 @@ Expression_class() { type = (Symbol) NULL; }
 
 #define Expression_SHARED_EXTRAS           \
 void code(ostream&); 			   \
-void dump_with_types(ostream&,int); 
+void dump_with_types(ostream&,int);
 
 
 #endif

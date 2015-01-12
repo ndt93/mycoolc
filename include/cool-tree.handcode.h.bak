@@ -50,7 +50,7 @@ typedef list_node<Case> Cases_class;
 typedef Cases_class *Cases;
 
 #define Program_EXTRAS                           \
-virtual cgen(ostream&) = 0;                      \
+virtual void cgen(ostream&) = 0;                      \
 virtual void dump_with_types(ostream&, int) = 0; \
 virtual void semant() = 0;
 
