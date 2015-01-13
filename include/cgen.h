@@ -42,6 +42,9 @@ private:
    void install_classes(Classes cs);
    void build_inheritance_tree();
    void set_relations(CgenNodeP nd);
+
+   /* Method to generate the class_nameTab */
+   void fill_classname_tab(List<CgenNode>* l);
 public:
    CgenClassTable(Classes, ostream& str);
    void code();

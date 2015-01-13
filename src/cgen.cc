@@ -756,7 +756,7 @@ void CgenClassTable::install_basic_classes()
 				   Str,
 				   no_expr()))),
 	     filename),
-        stringclasstag, Basic,this));
+        stringclasstag, Basic, this));
 
 }
 
@@ -782,8 +782,10 @@ void CgenClassTable::install_class(CgenNodeP nd)
 
 void CgenClassTable::install_classes(Classes cs)
 {
-    for(int i = cs->first(); cs->more(i); i = cs->next(i))
-        install_class(new CgenNode(cs->nth(i), NONBASIC_OFFSET + i,
+    for(int i = cs->first(), tag = NONBASIC_OFFSET;
+        cs->more(i);
+        i = cs->next(i), tag++)
+        install_class(new CgenNode(cs->nth(i), tag,
                                    NotBasic, this));
 }
 
@@ -836,7 +838,11 @@ void CgenClassTable::code()
 
     /* Prototype objects */
     root()->generate_proto(str);
+
     /* Class_nameTab */
+    str << CLASSNAMETAB << LABEL;
+    fill_classname_tab(nds);
+
     /* Dispatch tables */
 
     if (cgen_debug) cout << "coding global text" << endl;
@@ -855,6 +861,16 @@ CgenNodeP CgenClassTable::root()
     return probe(Object);
 }
 
+
+void CgenClassTable::fill_classname_tab(List<CgenNode>* l) {
+    if (l == NULL) return;
+
+    fill_classname_tab(l->tl());
+
+    str << WORD;
+    stringtable.lookup_string(l->hd()->get_name()->get_string())->code_ref(str);
+    str << endl;
+}
 
 ///////////////////////////////////////////////////////////////////////
 //
@@ -906,7 +922,7 @@ void CgenNode::generate_proto(ostream& s)
 
     emit_protobj_ref(name, s); s << LABEL;
     s << WORD << class_tag << endl;
-    
+
     if (name == Str) {
         s << WORD << 5 << endl;
         s << WORD; emit_disptable_ref(name, s); s << endl; // dispatch table
@@ -933,7 +949,7 @@ void CgenNode::generate_proto(ostream& s)
             } else if (attr_type == Str) {
                 classtable->empty_string->code_ref(s);
             } else if (attr_type == Bool) {
-                falsebool.code_ref(s); 
+                falsebool.code_ref(s);
             } else {
                 s << VOID_REF;
             }
