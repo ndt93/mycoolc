@@ -64,9 +64,20 @@ private:
 protected:
    int class_tag;
    
+/* Fields used to layout object attributes in memory */
    int num_attr;
    SymbolTable<Symbol, int> attr_offset;
-   SymbolTable<int, Entry> offset_type;
+   SymbolTable<int, Entry> offset_type; // offset to attribute type mapping
+
+/* Fields used to layout method in dispatch table */
+   struct method_name_t {
+        Symbol class_name;
+        Symbol method_name;
+   };
+
+   int num_methods;
+   SymbolTable<Symbol, int> method_offset;
+   SymbolTable<int, method_name_t>  offset_method; // offset to method name (with class)
 public:
    CgenNode(Class_ c,
             int tag,
@@ -79,8 +90,9 @@ public:
    CgenNodeP get_parentnd() { return parentnd; }
    int basic() { return (basic_status == Basic); }
 
-   /* Methods for generating code for this class */
+   /* Methods to generate code for this class */
    void generate_proto(ostream& s); // Generate prototype object
+   void generate_disptab(ostream& s); // Generate dispatch table
 };
 
 class BoolConst 

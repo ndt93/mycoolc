@@ -356,7 +356,7 @@ static void emit_test_collector(ostream &s)
 
 static void emit_gc_check(char *source, ostream &s)
 {
-    if (source != (char*)A1) emit_move(A1, source, s);
+    if (source != (char*) A1) emit_move(A1, source, s);
     s << JAL << "_gc_check" << endl;
 }
 
@@ -410,9 +410,9 @@ void StringEntry::code_def(ostream& s, int stringclasstag)
     emit_disptable_ref(Str, s);
     s << endl;
 
-    s << WORD;  lensym->code_ref(s);  s << endl;            // string length
-    emit_string_constant(s, str);                               // ascii string
-    s << ALIGN;                                                 // align to word
+    s << WORD;  lensym->code_ref(s);  s << endl;           // string length
+    emit_string_constant(s, str);                          // ascii string
+    s << ALIGN;                                            // align to word
 }
 
 //
@@ -836,14 +836,14 @@ void CgenClassTable::code()
     if (cgen_debug) cout << "coding constants" << endl;
     code_constants();
 
+    CgenNodeP obj_class = root();
     /* Prototype objects */
-    root()->generate_proto(str);
-
+    obj_class->generate_proto(str);
     /* Class_nameTab */
     str << CLASSNAMETAB << LABEL;
     fill_classname_tab(nds);
-
     /* Dispatch tables */
+    obj_class->generate_disptab(str);
 
     if (cgen_debug) cout << "coding global text" << endl;
     code_global_text();
@@ -862,7 +862,8 @@ CgenNodeP CgenClassTable::root()
 }
 
 
-void CgenClassTable::fill_classname_tab(List<CgenNode>* l) {
+void CgenClassTable::fill_classname_tab(List<CgenNode>* l)
+{
     if (l == NULL) return;
 
     fill_classname_tab(l->tl());
@@ -930,7 +931,6 @@ void CgenNode::generate_proto(ostream& s)
         emit_string_constant(s, "");
         s << ALIGN;
     } else {
-
         s << WORD << DEFAULT_OBJFIELDS + num_attr << endl; // object size
 
         s << WORD;
@@ -962,6 +962,61 @@ void CgenNode::generate_proto(ostream& s)
     /* Generate protypes of children classes */
     for (List<CgenNode>* l = children; l; l = l->tl()) {
         l->hd()->generate_proto(s);
+    }
+}
+
+void CgenNode::generate_disptab(ostream& s)
+{
+    if (cgen_debug) {
+        cout << "Creating prototype object for " << name << endl;
+    }
+
+    emit_disptable_ref(name, s); s << LABEL;
+
+    if (parentnd->name != No_class) {
+        method_offset = parentnd->method_offset;
+        offset_method = parentnd->offset_method;
+        num_methods = parentnd->num_methods;
+    } else {
+        num_methods = 0;
+    }
+
+    method_offset.enterscope();
+    offset_method.enterscope();
+
+    Feature f;
+    int* offset;
+    method_name_t* med_name;
+
+    for (int i = 0; features->more(i); i = features->next(i)) {
+        f = features->nth(i);
+        if (f->get_feature_type() == METHOD_FEATURE) {
+            offset = parentnd->method_offset.lookup(f->get_name());
+
+            med_name = new method_name_t();
+            med_name->class_name = name;
+            med_name->method_name = f->get_name();
+
+            if (offset == NULL) {
+                method_offset.addid(f->get_name(), new int(num_methods));
+                offset_method.addid(num_methods, med_name);
+                num_methods++;
+            } else {
+                offset_method.addid(*offset, med_name);
+            }
+        }
+    }
+
+    for (int i = 0; i < num_methods; i++) {
+        method_name_t* method_name = offset_method.lookup(i);
+
+        s << WORD;
+        emit_method_ref(method_name->class_name, method_name->method_name, s);
+        s << endl;
+    }
+
+    for (List<CgenNode>* l = children; l; l = l->tl()) {
+        l->hd()->generate_disptab(s);
     }
 }
 
