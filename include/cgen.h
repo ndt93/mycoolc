@@ -93,6 +93,7 @@ public:
    /* Methods to generate code for this class */
    void generate_proto(ostream& s); // Generate prototype object
    void generate_disptab(ostream& s); // Generate dispatch table
+   void generate_init(ostream& s); // Generate init procedure
 };
 
 class BoolConst 

@@ -77,7 +77,8 @@ virtual int get_feature_type() = 0;                 \
 virtual Symbol get_name() = 0;                      \
 virtual Formals get_formals() { return NULL; }                     \
 virtual Symbol get_return_type() { return NULL; }                  \
-virtual Symbol get_type() { return NULL; }
+virtual Symbol get_type() { return NULL; }                         \
+virtual Expression get_init() { return NULL; }
 
 
 #define Feature_SHARED_EXTRAS                                       \
@@ -87,7 +88,8 @@ void dump_with_types(ostream&,int);
 #define attr_EXTRAS           \
 int get_feature_type() { return ATTR_FEATURE; }     \
 Symbol get_name() { return name; };                 \
-Symbol get_type() { return type_decl; };
+Symbol get_type() { return type_decl; };            \
+Expression get_init() { return init; }
 
 
 #define method_EXTRAS         \
@@ -120,11 +122,16 @@ Expression set_type(Symbol s) { type = s; return this; } \
 virtual void code(ostream&) = 0; \
 virtual void dump_with_types(ostream&,int) = 0;  \
 void dump_type(ostream&, int);               \
-Expression_class() { type = (Symbol) NULL; }
+Expression_class() { type = (Symbol) NULL; } \
+virtual bool is_no_expr() { return false; }
 
 #define Expression_SHARED_EXTRAS           \
 void code(ostream&); 			   \
 void dump_with_types(ostream&,int);
+
+
+#define no_expr_EXTRAS \
+bool is_no_expr() { return true; }
 
 
 #endif

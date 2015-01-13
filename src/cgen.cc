@@ -324,8 +324,16 @@ static void emit_branch(int l, ostream& s)
 //
 static void emit_push(char *reg, ostream& str)
 {
-    emit_store(reg,0,SP,str);
-    emit_addiu(SP,SP,-4,str);
+    emit_store(reg, 0, SP, str);
+    emit_addiu(SP, SP, -4, str);
+}
+
+//
+// Push a register on the stack. The stack grows towards smaller addresses.
+//
+static void emit_pop(ostream& str)
+{
+    emit_addiu(SP, SP, 4, str);
 }
 
 //
@@ -350,7 +358,7 @@ static void emit_test_collector(ostream &s)
     emit_move(ACC, SP, s); // stack end
     emit_move(A1, ZERO, s); // allocate nothing
     s << JAL << gc_collect_names[cgen_Memmgr] << endl;
-    emit_addiu(SP,SP,4,s);
+    emit_addiu(SP, SP, 4, s);
     emit_load(ACC,0,SP,s);
 }
 
@@ -848,8 +856,8 @@ void CgenClassTable::code()
     if (cgen_debug) cout << "coding global text" << endl;
     code_global_text();
 
-    //                 Add your code to emit
     //                   - object initializer
+    obj_class->generate_init(str);
     //                   - the class methods
     //                   - etc...
 
@@ -1018,6 +1026,67 @@ void CgenNode::generate_disptab(ostream& s)
     for (List<CgenNode>* l = children; l; l = l->tl()) {
         l->hd()->generate_disptab(s);
     }
+}
+
+void CgenNode::generate_init(ostream& s) {
+    emit_init_ref(name, s); s << LABEL;
+
+    /* If this is a basic class then no need to do anything */
+    if (basic_status == Basic) {
+        /* Pop the old frame pointer */
+        emit_pop(s);
+        emit_move(FP, SP, s);
+
+        /* Return to the caller, new object already in ACC */
+        emit_return(s);
+    } else {
+        /* Complete the AR for this init call */
+        emit_push(ACC, s); // push the self object onto the stack
+        emit_move(FP, SP, s); // update the frame pointer to end of this AR
+        emit_push(RA, s); // push the return address onto the stack
+
+        /* Calling parent's init */
+        if (parentnd->get_name() != No_class) {
+            /* Making the initial AR for the parent's init call */
+            emit_push(FP, s); // push the old frame pointer
+            s << JAL; emit_init_ref(parentnd->get_name(), s); s << endl;
+        }
+
+        /* Initialize own attributes */
+        Feature f;
+        Expression init;
+        int offset;
+
+        for (int i = features->first(); features->more(i); i = features->next(i)) {
+            f = features->nth(i);
+
+            if (f->get_feature_type() == ATTR_FEATURE) {
+                init = f->get_init();
+
+                if (!init->is_no_expr()) {
+                    init->code(s);
+                    emit_load(T1, SELF_OFFSET, FP, s);
+                    offset = *(attr_offset.lookup(f->get_name())) +
+                                DEFAULT_OBJFIELDS;
+                    emit_store(ACC, offset, T1, s);
+                }
+            }
+        }
+
+        emit_move(RA, FP, s); // Put the return address to $ra
+
+        /* Put the object back to ACC and clean up AR */
+        emit_load(ACC, SELF_OFFSET, FP, s);
+        // AR = ra + self + old_fp = 12
+        emit_addiu(SP, SP, 12, s);
+        // Restore caller's frame pointer
+        emit_move(FP, SP, s);
+
+        emit_return(s);
+    }
+
+    for (List<CgenNode>* l = children; l; l = l->tl())
+        l->hd()->generate_init(s);
 }
 
 //******************************************************************
