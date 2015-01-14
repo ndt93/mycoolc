@@ -5,6 +5,7 @@
 #include "symtab.h"
 
 enum Basicness     {Basic, NotBasic};
+
 #define TRUE 1
 #define FALSE 0
 
@@ -94,6 +95,7 @@ public:
    void generate_proto(ostream& s); // Generate prototype object
    void generate_disptab(ostream& s); // Generate dispatch table
    void generate_init(ostream& s); // Generate init procedure
+   void generate_methods(ostream& s); // Generate rest of methods
 };
 
 class BoolConst 

@@ -31,6 +31,17 @@
 
 #define VOID_REF 0
 
+/*
+ * Global variables used to generate code for methods
+ */
+static CgenNodeP cur_class; // class in which code are being generated
+// Offset of a formal parameter from FP
+static SymbolTable<Symbol, int> formals_offset;
+// Current SP offset from FP
+static int sp_offset;
+// Offset of other identifiers from FP
+static SymbolTable<Symbol, int> id_offset;
+
 extern void emit_string_constant(ostream& str, char *s);
 extern int cgen_debug;
 
@@ -856,10 +867,10 @@ void CgenClassTable::code()
     if (cgen_debug) cout << "coding global text" << endl;
     code_global_text();
 
-    //                   - object initializer
+    // Object initializer
     obj_class->generate_init(str);
-    //                   - the class methods
-    //                   - etc...
+    // The class methods
+    obj_class->generate_methods(str);
 
 }
 
@@ -1035,7 +1046,7 @@ void CgenNode::generate_init(ostream& s) {
     if (basic_status == Basic) {
         /* Pop the old frame pointer */
         emit_pop(s);
-        emit_move(FP, SP, s);
+        emit_load(FP, 0, SP, s);
 
         /* Return to the caller, new object already in ACC */
         emit_return(s);
@@ -1073,20 +1084,80 @@ void CgenNode::generate_init(ostream& s) {
             }
         }
 
-        emit_move(RA, FP, s); // Put the return address to $ra
+        emit_load(RA, 0, FP, s); // Put the return address to $ra
 
         /* Put the object back to ACC and clean up AR */
         emit_load(ACC, SELF_OFFSET, FP, s);
         // AR = ra + self + old_fp = 12
         emit_addiu(SP, SP, 12, s);
         // Restore caller's frame pointer
-        emit_move(FP, SP, s);
+        emit_load(FP, 0, SP, s);
 
         emit_return(s);
     }
 
     for (List<CgenNode>* l = children; l; l = l->tl())
         l->hd()->generate_init(s);
+}
+
+/*
+ * AR structure:
+ * (high) |old fp| arg0 | arg1 | ... | argN-1 | self | ra | <- fp (low)
+ */
+void CgenNode::generate_methods(ostream& s)
+{
+    if (basic_status != Basic) {
+        cur_class = this;
+
+        Feature f;
+        for (int i = features->first(); features->more(i); i = features->next(i)) {
+            f = features->nth(i);
+            if (f->get_feature_type() == METHOD_FEATURE)
+                f->code(s);
+        }
+    }
+
+    for (List<CgenNode>* l = children; l; l = l->tl())
+        l->hd()->generate_methods(s);
+}
+
+void method_class::code(ostream& s)
+{
+    formals_offset.enterscope();
+    id_offset.enterscope();
+
+    emit_method_ref(cur_class->get_name(), name, s);
+    s << LABEL;
+
+    /* Set up the rest of AR after the caller */
+    emit_push(SELF, s); // push self onto the stack
+    emit_move(FP, SP, s); // Update FP to end of AR
+    emit_push(RA, s); // push return address onto the stack
+    sp_offset = -1; // SP is now 1 word lower than FP
+
+    /* Find the offset of a parameter from the FP in the AR
+     * offset = #formals + 1 - formal */
+    int num_formals = formals->len();
+    for (int i = formals->first(), j = 0; formals->more(i);
+         i = formals->next(i), j++) {
+        formals_offset.addid(formals->nth(i)->get_name(),
+                             new int(num_formals + 1 - j));
+    }
+
+    /* Generate code for method's body */
+    expr->code(s); // Preserve stack and result is in ACC
+
+    emit_load(RA, 0, FP, s); // Put the return address to $ra
+
+    // Pop AR off the stack
+    emit_addiu(SP, SP, 4 * (3 + num_formals), s);
+    // Restore caller's frame pointer
+    emit_load(FP, 0, SP, s);
+
+    emit_return(s);
+
+    id_offset.exitscope();
+    formals_offset.exitscope();
 }
 
 //******************************************************************

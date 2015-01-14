@@ -50,6 +50,8 @@ public:
    tree_node *copy()		 { return copy_Feature(); }
    virtual Feature copy_Feature() = 0;
 
+   virtual void code(ostream&) {};
+
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
 #endif
@@ -187,6 +189,8 @@ public:
    }
    Feature copy_Feature();
    void dump(ostream& stream, int n);
+
+   void code(ostream& s);
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
