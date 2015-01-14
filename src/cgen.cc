@@ -36,11 +36,9 @@
  */
 static CgenNodeP cur_class; // class in which code are being generated
 // Offset of a formal parameter from FP
-static SymbolTable<Symbol, int> formals_offset;
+static SymbolTable<Symbol, int> id_offset;
 // Current SP offset from FP
 static int sp_offset;
-// Offset of other identifiers from FP
-static SymbolTable<Symbol, int> id_offset;
 
 extern void emit_string_constant(ostream& str, char *s);
 extern int cgen_debug;
@@ -244,7 +242,7 @@ static void emit_sll(char *dest, char *src1, int num, ostream& s)
 static void emit_jalr(char *dest, ostream& s)
 { s << JALR << "\t" << dest << endl; }
 
-static void emit_jal(char *address,ostream &s)
+static void emit_jal(char *address, ostream &s)
 { s << JAL << address << endl; }
 
 static void emit_return(ostream& s)
@@ -1123,14 +1121,13 @@ void CgenNode::generate_methods(ostream& s)
 
 void method_class::code(ostream& s)
 {
-    formals_offset.enterscope();
     id_offset.enterscope();
 
     emit_method_ref(cur_class->get_name(), name, s);
     s << LABEL;
 
     /* Set up the rest of AR after the caller */
-    emit_push(SELF, s); // push self onto the stack
+    emit_push(ACC, s); // push self onto the stack
     emit_move(FP, SP, s); // Update FP to end of AR
     emit_push(RA, s); // push return address onto the stack
     sp_offset = -1; // SP is now 1 word lower than FP
@@ -1140,7 +1137,7 @@ void method_class::code(ostream& s)
     int num_formals = formals->len();
     for (int i = formals->first(), j = 0; formals->more(i);
          i = formals->next(i), j++) {
-        formals_offset.addid(formals->nth(i)->get_name(),
+        id_offset.addid(formals->nth(i)->get_name(),
                              new int(num_formals + 1 - j));
     }
 
@@ -1157,7 +1154,6 @@ void method_class::code(ostream& s)
     emit_return(s);
 
     id_offset.exitscope();
-    formals_offset.exitscope();
 }
 
 //******************************************************************
@@ -1170,13 +1166,36 @@ void method_class::code(ostream& s)
 //
 //*****************************************************************
 
+/*
+ * Emit code that load the location of the address
+ * of an object to which an id refers into <dest_reg>
+ */
+static void load_id_loc(char* dest_reg, Symbol id, ostream& s)
+{
+    int* offset;
+
+    if (id == self) {
+        emit_addiu(dest_reg, FP, SELF_OFFSET * 4, s);
+    } else if ((offset = id_offset.lookup(id)) != NULL) {
+        emit_addiu(dest_reg, FP, WORD_SIZE * (*offset), s);
+    } else if ((offset = cur_class->attr_offset.lookup(id)) != NULL) {
+        emit_load(dest_reg, SELF_OFFSET, FP, s);
+        emit_addiu(dest_reg, dest_reg,
+                   WORD_SIZE * (DEFAULT_OBJFIELDS + (*offset)), s);
+    }
+}
+
 void assign_class::code(ostream &s) {
+    expr->code(s);
+    load_id_loc(T1, name, s);
+    emit_store(ACC, 0, T1, s);
 }
 
 void static_dispatch_class::code(ostream &s) {
 }
 
 void dispatch_class::code(ostream &s) {
+    expr->code(s);
 }
 
 void cond_class::code(ostream &s) {
@@ -1249,6 +1268,8 @@ void no_expr_class::code(ostream &s) {
 }
 
 void object_class::code(ostream &s) {
+    load_id_loc(T1, id, s);
+    emit_load(ACC, 0, T1, s);
 }
 
 

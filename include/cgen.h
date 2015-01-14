@@ -67,7 +67,6 @@ protected:
    
 /* Fields used to layout object attributes in memory */
    int num_attr;
-   SymbolTable<Symbol, int> attr_offset;
    SymbolTable<int, Entry> offset_type; // offset to attribute type mapping
 
 /* Fields used to layout method in dispatch table */
@@ -90,6 +89,8 @@ public:
    void set_parentnd(CgenNodeP p);
    CgenNodeP get_parentnd() { return parentnd; }
    int basic() { return (basic_status == Basic); }
+
+   SymbolTable<Symbol, int> attr_offset;
 
    /* Methods to generate code for this class */
    void generate_proto(ostream& s); // Generate prototype object
