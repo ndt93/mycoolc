@@ -46,6 +46,7 @@ private:
 
    /* Method to generate the class_nameTab */
    void fill_classname_tab(List<CgenNode>* l);
+   void fill_classobj_tab(List<CgenNode>* l);
 public:
    CgenClassTable(Classes, ostream& str);
    void code();

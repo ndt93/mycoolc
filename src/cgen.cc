@@ -867,6 +867,9 @@ void CgenClassTable::code()
     /* Class_nameTab */
     str << CLASSNAMETAB << LABEL;
     fill_classname_tab(nds);
+    /* Class_objTab */
+    str << CLASSNAMETAB << LABEL;
+    fill_classname_tab(nds);
     /* Dispatch tables */
     obj_class->generate_disptab(str);
 
@@ -890,6 +893,18 @@ void CgenClassTable::fill_classname_tab(List<CgenNode>* l)
 
     str << WORD;
     stringtable.lookup_string(l->hd()->get_name()->get_string())->code_ref(str);
+    str << endl;
+}
+
+void CgenClassTable::fill_classobj_tab(List<CgenNode>* l)
+{
+    if (l == NULL) return;
+
+    fill_classname_tab(l->tl());
+
+    str << WORD;
+    emit_protobj_ref(l->hd()->get_name(), str);
+    emit_init_ref(l->hd()->get_name(), str);
     str << endl;
 }
 
@@ -1208,12 +1223,14 @@ void dispatch_class::code(ostream &s) {
 
     emit_push(FP, s); // push the old frame pointer
     emit_push(ACC, s); // push the self object
+    sp_offset -= 2;
 
     int* offset = disp_class->method_offset.lookup(name);
 
     for (int i = actual->first(); actual->more(i); i = actual->next(i)) {
         actual->nth(i)->code(s);
         emit_push(ACC, s);
+        sp_offset -= 1;
     }
 
     emit_load(ACC, actual->len() + 1, SP, s); // load self's heap addr. into ACC
@@ -1223,6 +1240,7 @@ void dispatch_class::code(ostream &s) {
 
     emit_addiu(SP, SP, 8, s);
     emit_load(FP, 0, SP, s);
+    sp_offset += 2;
 }
 
 void cond_class::code(ostream &s) {
@@ -1272,11 +1290,7 @@ void int_const_class::code(ostream& s)
     //
     // Need to be sure we have an IntEntry *, not an arbitrary Symbol
     //
-    emit_load_int(ACC, inttable.lookup_string(token->get_string()), s);
-}
-
-void string_const_class::code(ostream& s)
-{
+void string_const_class::code(ostream& s) {
     emit_load_string(ACC, stringtable.lookup_string(token->get_string()), s);
 }
 
@@ -1286,6 +1300,24 @@ void bool_const_class::code(ostream& s)
 }
 
 void new__class::code(ostream &s) {
+    if (type_name == SELF_TYPE) {
+        load_id_loc(ACC, self, s);
+        emit_load(T1, TAG_OFFSET, ACC, s);
+        emit_load_imm(T2, 8, s);
+        emit_mul(T1, T1, T2, s);
+        emit_partial_load_address(T2, s);
+        s << CLASSOBJTAB << endl;
+        emit_add(T1, T1, T2, s);
+        emit_load(ACC, 0, T1, s);
+        emit_load(T1, 1, T1, s);
+        emit_jalr(T1, s);
+    } else {
+        emit_partial_load_address(ACC, s);
+        emit_protobj_ref(type_name, s);
+        s << endl;
+        s << JAL; emit_method_ref(Object, stringtable.add_string("copy"), s);
+        s << JAL; emit_init_ref(type_name, s);
+    }
 }
 
 void isvoid_class::code(ostream &s) {
