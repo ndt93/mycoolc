@@ -868,8 +868,8 @@ void CgenClassTable::code()
     str << CLASSNAMETAB << LABEL;
     fill_classname_tab(nds);
     /* Class_objTab */
-    str << CLASSNAMETAB << LABEL;
-    fill_classname_tab(nds);
+    str << CLASSOBJTAB << LABEL;
+    fill_classobj_tab(nds);
     /* Dispatch tables */
     obj_class->generate_disptab(str);
 
@@ -900,12 +900,10 @@ void CgenClassTable::fill_classobj_tab(List<CgenNode>* l)
 {
     if (l == NULL) return;
 
-    fill_classname_tab(l->tl());
+    fill_classobj_tab(l->tl());
 
-    str << WORD;
-    emit_protobj_ref(l->hd()->get_name(), str);
-    emit_init_ref(l->hd()->get_name(), str);
-    str << endl;
+    str << WORD; emit_protobj_ref(l->hd()->get_name(), str); str << endl;
+    str << WORD; emit_init_ref(l->hd()->get_name(), str); str << endl;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -1290,6 +1288,8 @@ void int_const_class::code(ostream& s)
     //
     // Need to be sure we have an IntEntry *, not an arbitrary Symbol
     //
+}
+
 void string_const_class::code(ostream& s) {
     emit_load_string(ACC, stringtable.lookup_string(token->get_string()), s);
 }
