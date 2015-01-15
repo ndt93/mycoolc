@@ -76,7 +76,6 @@ protected:
    };
 
    int num_methods;
-   SymbolTable<Symbol, int> method_offset;
    SymbolTable<int, method_name_t>  offset_method; // offset to method name (with class)
 public:
    CgenNode(Class_ c,
@@ -91,6 +90,7 @@ public:
    int basic() { return (basic_status == Basic); }
 
    SymbolTable<Symbol, int> attr_offset;
+   SymbolTable<Symbol, int> method_offset;
 
    /* Methods to generate code for this class */
    void generate_proto(ostream& s); // Generate prototype object

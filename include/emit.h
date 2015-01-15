@@ -104,8 +104,3 @@
 #define BLEQ     "\tble\t"
 #define BLT      "\tblt\t"
 #define BGT      "\tbgt\t"
-
-//
-// AR info
-//
-#define SELF_OFFSET 1

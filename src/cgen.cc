@@ -40,6 +40,8 @@ static SymbolTable<Symbol, int> id_offset;
 // Current SP offset from FP
 static int sp_offset;
 
+static CgenClassTable *codegen_classtable;
+
 extern void emit_string_constant(ostream& str, char *s);
 extern int cgen_debug;
 
@@ -150,7 +152,7 @@ void program_class::cgen(ostream &os)
     os << "# start of generated code\n";
 
     initialize_constants();
-    CgenClassTable *codegen_classtable = new CgenClassTable(classes, os);
+    codegen_classtable = new CgenClassTable(classes, os);
 
     os << "\n# end of generated code\n";
 }
@@ -1038,26 +1040,25 @@ void CgenNode::generate_disptab(ostream& s)
 }
 
 void CgenNode::generate_init(ostream& s) {
+    id_offset.enterscope();
+
     emit_init_ref(name, s); s << LABEL;
 
     /* If this is a basic class then no need to do anything */
     if (basic_status == Basic) {
-        /* Pop the old frame pointer */
-        emit_pop(s);
-        emit_load(FP, 0, SP, s);
-
         /* Return to the caller, new object already in ACC */
         emit_return(s);
     } else {
         /* Complete the AR for this init call */
+        emit_push(FP, s); // push the old frame pointer onto the stack
         emit_push(ACC, s); // push the self object onto the stack
-        emit_move(FP, SP, s); // update the frame pointer to end of this AR
+        emit_move(FP, SP, s); // update the new frame pointer
         emit_push(RA, s); // push the return address onto the stack
+
+        id_offset.addid(self, new int(1));
 
         /* Calling parent's init */
         if (parentnd->get_name() != No_class) {
-            /* Making the initial AR for the parent's init call */
-            emit_push(FP, s); // push the old frame pointer
             s << JAL; emit_init_ref(parentnd->get_name(), s); s << endl;
         }
 
@@ -1074,7 +1075,8 @@ void CgenNode::generate_init(ostream& s) {
 
                 if (!init->is_no_expr()) {
                     init->code(s);
-                    emit_load(T1, SELF_OFFSET, FP, s);
+
+                    emit_load(T1, 1, FP, s);
                     offset = *(attr_offset.lookup(f->get_name())) +
                                 DEFAULT_OBJFIELDS;
                     emit_store(ACC, offset, T1, s);
@@ -1085,14 +1087,14 @@ void CgenNode::generate_init(ostream& s) {
         emit_load(RA, 0, FP, s); // Put the return address to $ra
 
         /* Put the object back to ACC and clean up AR */
-        emit_load(ACC, SELF_OFFSET, FP, s);
+        emit_load(ACC, 1, FP, s);
         // AR = ra + self + old_fp = 12
         emit_addiu(SP, SP, 12, s);
-        // Restore caller's frame pointer
-        emit_load(FP, 0, SP, s);
 
         emit_return(s);
     }
+
+    id_offset.exitscope();
 
     for (List<CgenNode>* l = children; l; l = l->tl())
         l->hd()->generate_init(s);
@@ -1126,20 +1128,26 @@ void method_class::code(ostream& s)
     emit_method_ref(cur_class->get_name(), name, s);
     s << LABEL;
 
+    if (name == main_meth) {
+        emit_push(FP, s);
+        emit_push(ACC, s);
+    }
+
     /* Set up the rest of AR after the caller */
-    emit_push(ACC, s); // push self onto the stack
     emit_move(FP, SP, s); // Update FP to end of AR
     emit_push(RA, s); // push return address onto the stack
-    sp_offset = -1; // SP is now 1 word lower than FP
+    sp_offset = -1; // SP is now 1 Word lower than FP
 
-    /* Find the offset of a parameter from the FP in the AR
-     * offset = #formals + 1 - formal */
+    /* Find the offset of a parameter from the FP in the AR */
     int num_formals = formals->len();
+
     for (int i = formals->first(), j = 0; formals->more(i);
          i = formals->next(i), j++) {
         id_offset.addid(formals->nth(i)->get_name(),
-                             new int(num_formals + 1 - j));
+                             new int(num_formals - j));
     }
+
+    id_offset.addid(self, new int(num_formals + 1));
 
     /* Generate code for method's body */
     expr->code(s); // Preserve stack and result is in ACC
@@ -1147,9 +1155,7 @@ void method_class::code(ostream& s)
     emit_load(RA, 0, FP, s); // Put the return address to $ra
 
     // Pop AR off the stack
-    emit_addiu(SP, SP, 4 * (3 + num_formals), s);
-    // Restore caller's frame pointer
-    emit_load(FP, 0, SP, s);
+    emit_addiu(SP, SP, 4 * (1 + num_formals), s);
 
     emit_return(s);
 
@@ -1174,14 +1180,18 @@ static void load_id_loc(char* dest_reg, Symbol id, ostream& s)
 {
     int* offset;
 
-    if (id == self) {
-        emit_addiu(dest_reg, FP, SELF_OFFSET * 4, s);
-    } else if ((offset = id_offset.lookup(id)) != NULL) {
+    if ((offset = id_offset.lookup(id)) != NULL) {
         emit_addiu(dest_reg, FP, WORD_SIZE * (*offset), s);
     } else if ((offset = cur_class->attr_offset.lookup(id)) != NULL) {
-        emit_load(dest_reg, SELF_OFFSET, FP, s);
-        emit_addiu(dest_reg, dest_reg,
-                   WORD_SIZE * (DEFAULT_OBJFIELDS + (*offset)), s);
+        int* self_offset = id_offset.lookup(self);
+
+        if (self_offset != NULL) {
+            emit_load(dest_reg, *self_offset, FP, s);
+            emit_addiu(dest_reg, dest_reg,
+                       WORD_SIZE * (DEFAULT_OBJFIELDS + (*offset)), s);
+        } else {
+            printf("Cannot locate self object!\n");
+        }
     }
 }
 
@@ -1195,7 +1205,28 @@ void static_dispatch_class::code(ostream &s) {
 }
 
 void dispatch_class::code(ostream &s) {
-    expr->code(s);
+    expr->code(s); // Evaluate expression, self will be in ACC
+
+    CgenNode* disp_class = expr->get_type() == SELF_TYPE ?
+        cur_class : codegen_classtable->lookup(expr->get_type());
+
+    emit_push(FP, s); // push the old frame pointer
+    emit_push(ACC, s); // push the self object
+
+    int* offset = disp_class->method_offset.lookup(name);
+
+    for (int i = actual->first(); actual->more(i); i = actual->next(i)) {
+        actual->nth(i)->code(s);
+        emit_push(ACC, s);
+    }
+
+    emit_load(ACC, actual->len() + 1, SP, s); // load self's heap addr. into ACC
+    emit_load(T1, DISPTABLE_OFFSET, ACC, s); // load disptab's addr. into T1
+    emit_load(T1, *offset, T1, s);
+    emit_jalr(T1, s);
+
+    emit_addiu(SP, SP, 8, s);
+    emit_load(FP, 0, SP, s);
 }
 
 void cond_class::code(ostream &s) {
@@ -1268,7 +1299,7 @@ void no_expr_class::code(ostream &s) {
 }
 
 void object_class::code(ostream &s) {
-    load_id_loc(T1, id, s);
+    load_id_loc(T1, name, s);
     emit_load(ACC, 0, T1, s);
 }
 
