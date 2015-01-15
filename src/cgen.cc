@@ -40,10 +40,10 @@ static SymbolTable<Symbol, int> id_offset;
 // Current SP offset from FP
 static int sp_offset;
 
-static CgenClassTable *codegen_classtable;
-
 extern void emit_string_constant(ostream& str, char *s);
 extern int cgen_debug;
+
+static CgenClassTableP codegen_classtable;
 
 //
 // Three symbols from the semantic analyzer (semant.cc) are used.
@@ -153,6 +153,12 @@ void program_class::cgen(ostream &os)
 
     initialize_constants();
     codegen_classtable = new CgenClassTable(classes, os);
+
+    // Object initializer
+    CgenNode* obj_class = codegen_classtable->root();
+    obj_class->generate_init(os);
+    // The class methods
+    obj_class->generate_methods(os);
 
     os << "\n# end of generated code\n";
 }
@@ -654,7 +660,7 @@ CgenClassTable::CgenClassTable(Classes classes, ostream& s) : nds(NULL) , str(s)
     build_inheritance_tree();
 
     code();
-    exitscope();
+    //exitscope();
 }
 
 void CgenClassTable::install_basic_classes()
@@ -866,11 +872,6 @@ void CgenClassTable::code()
 
     if (cgen_debug) cout << "coding global text" << endl;
     code_global_text();
-
-    // Object initializer
-    obj_class->generate_init(str);
-    // The class methods
-    obj_class->generate_methods(str);
 
 }
 
@@ -1127,11 +1128,6 @@ void method_class::code(ostream& s)
 
     emit_method_ref(cur_class->get_name(), name, s);
     s << LABEL;
-
-    if (name == main_meth) {
-        emit_push(FP, s);
-        emit_push(ACC, s);
-    }
 
     /* Set up the rest of AR after the caller */
     emit_move(FP, SP, s); // Update FP to end of AR
